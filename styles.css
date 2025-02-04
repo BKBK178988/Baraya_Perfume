@@ -97,3 +97,17 @@ header {
     transform: translateY(-5px);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
+.hidden {
+    display: none;
+}
+
+.cart {
+    border: 1px solid #ccc;
+    padding: 20px;
+    width: 300px;
+    background: #fff;
+    position: fixed;
+    top: 10%;
+    right: 10px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+}
