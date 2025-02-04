@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BARAYA PERFUME</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>BARAYA PERFUME</h1>
+        <p>น้ำหอมแท้ หรูหรา หอมติดทน</p>
+        <button class="cart-button" onclick="toggleCart()">🛒 ตะกร้าสินค้า (<span id="cart-count">0</span>)</button>
+    </header>
+
+    <section class="products">
+        <div class="product" data-name="AQUA.M" data-price="199">
+            <img src="AQUA.M.png" alt="AQUA.M">
+            <h2>AQUA.M</h2>
+            <p>แนวสปอร์ต เท่ หรูหรา สดชื่น</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('AQUA.M', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="BOMBSHELL" data-price="199">
+            <img src="BOMSHELL.png" alt="BOMBSHELL">
+            <h2>BOMBSHELL</h2>
+            <p>หอมเซ็กซี่ ขี้เล่น ฟรุ๊ตตี้</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('BOMBSHELL', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="FIRST LOVE" data-price="199">
+            <img src="FIRST LOVE.png" alt="FIRST LOVE">
+            <h2>FIRST LOVE</h2>
+            <p>หอมหวานละมุน น่าหลงใหล</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('FIRST LOVE', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="MONG BLACK" data-price="199">
+            <img src="MONG BLACK.png" alt="MONG BLACK">
+            <h2>MONG BLACK</h2>
+            <p>หรูหรา ไฮโซ มีเสน่ห์แบบผู้ชาย</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('MONG BLACK', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="VIN VIN" data-price="199">
+            <img src="VIN VIN.png" alt="VIN VIN">
+            <h2>VIN VIN</h2>
+            <p>หอมละมุน น่ารัก สดใส น่าเอ็นดู</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('VIN VIN', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="BERRY HER" data-price="199">
+            <img src="BERRY.png" alt="BERRY HER">
+            <h2>BERRY HER</h2>
+            <p>สาวหวานแคนดี้ ละมุน ยั่วยวน</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('BERRY HER', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="READY PINK" data-price="199">
+            <img src="READY PINK.png" alt="READY PINK">
+            <h2>READY PINK</h2>
+            <p>หอมหวานหรู ผู้ดี สไตล์คุณหนู</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('READY PINK', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="BLACK.M" data-price="199">
+            <img src="BLACK M..png" alt="BLACK.M">
+            <h2>BLACK.M</h2>
+            <p>กลิ่นสุขุม อบอุ่น สะอาด หรูหรา</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('BLACK.M', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="CRYSTAL" data-price="199">
+            <img src="CRYSTAL.png" alt="CRYSTAL">
+            <h2>CRYSTAL</h2>
+            <p>สะอาด สดชื่น อ่อนโยน</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('CRYSTAL', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+    </section>
+
+    <div id="cart" class="cart">
+        <h2>🛒 ตะกร้าสินค้า</h2>
+        <ul id="cart-items"></ul>
+        <p id="total-price">ราคารวม: 0 บาท</p>
+        <button onclick="checkout()">🛍️ สั่งซื้อผ่าน LINE</button>
+    </div>
+
+    <footer>
+        <p>ติดต่อเรา: <a href="https://line.me/ti/p/OJY81U61Jk">LINE</a></p>
+        <p>&copy; 2025 BARAYA PERFUME</p>
+    </footer>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
