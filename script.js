@@ -1,15 +1,19 @@
 let cart = [];
 
 function addToCart(name, price) {
-    // ตรวจสอบว่าสินค้าอยู่ในตะกร้าหรือยัง
     let existingItem = cart.find(item => item.name === name);
     
     if (existingItem) {
-        existingItem.quantity += 1; // ถ้ามีอยู่แล้วให้เพิ่มจำนวน
+        existingItem.quantity += 1; 
     } else {
-        cart.push({ name, price, quantity: 1 }); // ถ้ายังไม่มีให้เพิ่มใหม่
+        cart.push({ name, price, quantity: 1 });
     }
 
+    updateCart();
+}
+
+function removeFromCart(name) {
+    cart = cart.filter(item => item.name !== name);
     updateCart();
 }
 
@@ -25,7 +29,8 @@ function updateCart() {
 
     cart.forEach(item => {
         let li = document.createElement("li");
-        li.textContent = `${item.name} x${item.quantity} - ${item.price * item.quantity} บาท`;
+        li.innerHTML = `${item.name} x${item.quantity} - ${item.price * item.quantity} บาท 
+                        <button onclick="removeFromCart('${item.name}')">❌</button>`;
         cartList.appendChild(li);
         total += item.price * item.quantity;
         totalItems += item.quantity;
@@ -34,7 +39,6 @@ function updateCart() {
     cartCountElement.textContent = totalItems;
     totalPriceElement.textContent = `ราคารวม: ${total} บาท`;
 
-    // อัปเดตลิงก์ LINE อัตโนมัติ
     let message = cart.length > 0 
         ? `สวัสดี! ฉันต้องการสั่งซื้อสินค้า:\n${cart.map(item => `${item.name} x${item.quantity} - ${item.price * item.quantity} บาท`).join("\n")}`
         : "สวัสดี! ฉันต้องการสอบถามข้อมูลเพิ่มเติมเกี่ยวกับสินค้า";
@@ -48,5 +52,5 @@ function toggleCart() {
     cartElement.style.display = cartElement.style.display === "none" ? "block" : "none";
 }
 
-// เรียกใช้ updateCart() ตอนโหลดหน้าเว็บ
+// อัปเดตตะกร้าตอนโหลดหน้าเว็บ
 document.addEventListener("DOMContentLoaded", updateCart);
