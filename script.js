@@ -31,7 +31,7 @@ function updateCart() {
         ? `สวัสดี! ฉันต้องการสั่งซื้อสินค้า:\n${cart.map(item => `${item.name} - ${item.price} บาท`).join("\n")}`
         : "สวัสดี! ฉันต้องการสอบถามข้อมูลเพิ่มเติมเกี่ยวกับสินค้า";
 
-    let lineURL = `https://line.me/ti/p/~OJY81U61Jk?text=${encodeURIComponent(message)}`;
+    let lineURL = `https://line.me/ti/p/~bk0704?text=${encodeURIComponent(message)}`;
     lineOrderButton.href = lineURL;
 }
 
