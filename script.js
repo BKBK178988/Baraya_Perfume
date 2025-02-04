@@ -81,5 +81,9 @@ function updateCart() {
 
 function toggleCart() {
     let cartElement = document.getElementById("cart");
+    if (!cartElement) {
+        console.error("❌ ไม่พบ <div id='cart'> ใน HTML");
+        return;
+    }
     cartElement.classList.toggle("hidden");
 }
