@@ -80,34 +80,33 @@ header {
     transform: scale(1.05);
 }
 
+/* 🔹 ปรับปรุงสไตล์ของตะกร้า */
 .cart {
-    display: none;
     position: fixed;
+    top: 10%;
     right: 10px;
-    top: 50px;
-    background-color: white;
-    border-radius: 10px;
-    padding: 15px;
     width: 300px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000; /* ✅ ป้องกันปัญหากดไม่ได้ */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.cart:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-}
+/* ✅ ให้ตะกร้าหายไปเมื่อใช้ class 'hidden' */
 .hidden {
     display: none;
 }
 
-.cart {
-    border: 1px solid #ccc;
-    padding: 20px;
-    width: 300px;
-    background: #fff;
-    position: fixed;
-    top: 10%;
-    right: 10px;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+/* เพิ่มเอฟเฟกต์ให้ตะกร้า */
+.cart:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.cart-button {
+    cursor: pointer;
+    pointer-events: auto;
 }
