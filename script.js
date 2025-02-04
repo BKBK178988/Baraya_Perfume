@@ -13,7 +13,16 @@ function addToCart(name, price) {
 }
 
 function removeFromCart(name) {
-    cart = cart.filter(item => item.name !== name);
+    let itemIndex = cart.findIndex(item => item.name === name);
+    
+    if (itemIndex !== -1) {
+        if (cart[itemIndex].quantity > 1) {
+            cart[itemIndex].quantity -= 1;  // ลดจำนวนลงทีละ 1
+        } else {
+            cart.splice(itemIndex, 1);  // ถ้าจำนวนเหลือ 1 ให้ลบออกจากตะกร้าเลย
+        }
+    }
+
     updateCart();
 }
 
@@ -30,7 +39,7 @@ function updateCart() {
     cart.forEach(item => {
         let li = document.createElement("li");
         li.innerHTML = `${item.name} x${item.quantity} - ${item.price * item.quantity} บาท 
-                        <button onclick="removeFromCart('${item.name}')">❌</button>`;
+                        <button onclick="removeFromCart('${item.name}')">❌ ลบ</button>`;
         cartList.appendChild(li);
         total += item.price * item.quantity;
         totalItems += item.quantity;
@@ -52,5 +61,5 @@ function toggleCart() {
     cartElement.style.display = cartElement.style.display === "none" ? "block" : "none";
 }
 
-// อัปเดตตะกร้าตอนโหลดหน้าเว็บ
+// เรียกใช้งาน updateCart() ตอนโหลดหน้าเว็บ
 document.addEventListener("DOMContentLoaded", updateCart);
