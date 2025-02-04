@@ -1,31 +1,50 @@
 document.addEventListener("DOMContentLoaded", function() {
     let cartData = localStorage.getItem("cart");
     let totalPrice = localStorage.getItem("totalPrice");
-    
-    if (!cartData) {
-        alert("ตะกร้าสินค้าว่างเปล่า!");
+
+    if (!cartData || cartData === "[]") {
+        alert("⚠️ ตะกร้าสินค้าว่างเปล่า! กลับไปเลือกสินค้าก่อนทำการชำระเงิน");
         window.location.href = "index.html";
+        return;
     }
 
     let cart = JSON.parse(cartData);
     let qrImage = document.getElementById("qr-code");
 
-    // สร้าง QR Code สำหรับชำระเงิน (ตัวอย่างลิงก์ PromptPay QR)
-    let promptpayNumber = "0812345678";  // เปลี่ยนเป็นเบอร์โทร PromptPay จริง
+    // 🔹 สร้าง QR Code สำหรับ PromptPay
+    let promptpayNumber = "0812345678";  // เปลี่ยนเป็นเบอร์ PromptPay จริง
     let qrLink = `https://promptpay.io/${promptpayNumber}/${totalPrice}.png`;
     qrImage.src = qrLink;
 });
+
+function previewSlip() {
+    let fileInput = document.getElementById("slipUpload");
+    let previewContainer = document.getElementById("slipPreviewContainer");
+    let previewImage = document.getElementById("slipPreview");
+
+    let file = fileInput.files[0];
+    if (file) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewContainer.classList.remove("hidden");
+        };
+        reader.readAsDataURL(file);
+    }
+}
 
 function confirmOrder() {
     let name = document.getElementById("customer-name").value;
     let address = document.getElementById("customer-address").value;
     let phone = document.getElementById("customer-phone").value;
+    let slipFile = document.getElementById("slipUpload").files[0];
 
-    if (!name || !address || !phone) {
-        alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+    if (!name || !address || !phone || !slipFile) {
+        alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วน และแนบสลิปการโอนเงิน!");
         return;
     }
 
+    // 🔹 สร้างข้อมูลคำสั่งซื้อ
     let orderData = {
         name: name,
         address: address,
@@ -35,15 +54,17 @@ function confirmOrder() {
     };
 
     console.log("คำสั่งซื้อ:", orderData);
-    
-    alert("✅ คำสั่งซื้อถูกบันทึกแล้ว! กรุณาส่งหลักฐานการโอนผ่าน LINE");
 
-    // เปลี่ยนเส้นทางไปยัง LINE พร้อมข้อมูล
-    let message = `สวัสดี! ฉันได้ทำการสั่งซื้อสินค้าแล้ว\nชื่อ: ${name}\nที่อยู่: ${address}\nเบอร์โทร: ${phone}\nราคารวม: ${orderData.totalPrice} บาท`;
+    // 🔹 สร้างข้อความสำหรับส่งผ่าน LINE
+    let message = `📦 คำสั่งซื้อใหม่!\n\n👤 ชื่อ: ${name}\n🏠 ที่อยู่: ${address}\n📞 เบอร์โทร: ${phone}\n💰 ราคารวม: ${orderData.totalPrice} บาท\n\n✅ กรุณาตรวจสอบข้อมูล!`;
+
     let lineURL = `https://line.me/ti/p/~bk0704?text=${encodeURIComponent(message)}`;
+    
+    // 🔹 แจ้งเตือนและเปลี่ยนเส้นทางไปยัง LINE
+    alert("✅ สั่งซื้อสำเร็จ! ระบบจะนำคุณไปยัง LINE เพื่อส่งข้อมูลการสั่งซื้อ");
     window.location.href = lineURL;
 
-    // ล้างตะกร้าหลังสั่งซื้อ
+    // 🔹 ล้างตะกร้าหลังจากทำการสั่งซื้อ
     localStorage.removeItem("cart");
     localStorage.removeItem("totalPrice");
 }
