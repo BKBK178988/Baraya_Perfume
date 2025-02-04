@@ -14,24 +14,30 @@
     </header>
 
     <section class="checkout-form">
-        <label>ชื่อ - นามสกุล:</label>
-        <input type="text" id="customer-name" placeholder="ชื่อ-นามสกุล" required>
+        <label for="name">ชื่อ - นามสกุล:</label>
+        <input type="text" id="name" placeholder="ชื่อ-นามสกุล" required>
 
-        <label>ที่อยู่สำหรับจัดส่ง:</label>
-        <textarea id="customer-address" placeholder="กรอกที่อยู่สำหรับจัดส่ง" required></textarea>
+        <label for="address">ที่อยู่สำหรับจัดส่ง:</label>
+        <textarea id="address" placeholder="กรอกที่อยู่สำหรับจัดส่ง" required></textarea>
 
-        <label>เบอร์โทรศัพท์:</label>
-        <input type="tel" id="customer-phone" placeholder="กรอกเบอร์โทรศัพท์" required>
+        <label for="phone">เบอร์โทรศัพท์:</label>
+        <input type="text" id="phone" placeholder="กรอกเบอร์โทรศัพท์" required>
 
-        <h2>💳 QR Code สำหรับชำระเงิน</h2>
-        <img id="qr-code" src="" alt="QR Code ชำระเงิน">
-
+        <h2>📄 QR Code สำหรับชำระเงิน</h2>
+        <img src="qrcode.png" alt="QR Code สำหรับชำระเงิน" class="qr-code">
         <p>📌 กรุณาสแกน QR Code ด้านบนเพื่อชำระเงิน</p>
+
+        <!-- 🔹 ส่วนอัปโหลดสลิปการโอนเงิน -->
+        <h3>📎 อัปโหลดสลิปการโอนเงิน</h3>
+        <input type="file" id="slipUpload" accept="image/*" onchange="previewSlip()">
+        <div id="slipPreviewContainer" class="hidden">
+            <p>ตัวอย่างสลิป:</p>
+            <img id="slipPreview" class="slip-preview">
+        </div>
 
         <button onclick="confirmOrder()">✅ ยืนยันการสั่งซื้อ</button>
     </section>
 
     <script src="checkout.js"></script>
-
 </body>
 </html>
