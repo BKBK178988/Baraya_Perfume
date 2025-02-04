@@ -1,55 +1,44 @@
 let cart = [];
+let cartCount = 0;
 
 function addToCart(name, price) {
-    let product = cart.find(item => item.name === name);
-    if (product) {
-        product.quantity++;
-    } else {
-        cart.push({ name, price, quantity: 1 });
-    }
+    cart.push({ name, price });
+    cartCount++;
     updateCart();
 }
 
 function updateCart() {
-    let cartItems = document.getElementById("cart-items");
+    let cartList = document.getElementById("cart-items");
     let totalPrice = document.getElementById("total-price");
-    let cartCount = document.getElementById("cart-count");
+    let cartCountElement = document.getElementById("cart-count");
+    let lineOrderButton = document.getElementById("lineOrderButton");
 
-    cartItems.innerHTML = "";
+    cartList.innerHTML = "";
     let total = 0;
 
     cart.forEach(item => {
-        total += item.price * item.quantity;
         let li = document.createElement("li");
-        li.innerHTML = `${item.name} x${item.quantity} <button onclick="removeFromCart('${item.name}')">❌</button>`;
-        cartItems.appendChild(li);
+        li.textContent = `${item.name} - ${item.price} บาท`;
+        cartList.appendChild(li);
+        total += item.price;
     });
 
-    totalPrice.innerText = `ราคารวม: ${total} บาท`;
-    cartCount.innerText = cart.length;
-}
+    cartCountElement.textContent = cart.length;
+    totalPrice.textContent = `ราคารวม: ${total} บาท`;
 
-function removeFromCart(name) {
-    cart = cart.filter(item => item.name !== name);
-    updateCart();
+    // อัปเดตลิงก์ LINE อัตโนมัติ
+    let message = cart.length > 0 
+        ? `สวัสดี! ฉันต้องการสั่งซื้อสินค้า:\n${cart.map(item => `${item.name} - ${item.price} บาท`).join("\n")}`
+        : "สวัสดี! ฉันต้องการสอบถามข้อมูลเพิ่มเติมเกี่ยวกับสินค้า";
+
+    let lineURL = `https://line.me/ti/p/~OJY81U61Jk?text=${encodeURIComponent(message)}`;
+    lineOrderButton.href = lineURL;
 }
 
 function toggleCart() {
-    let cartDiv = document.getElementById("cart");
-    cartDiv.style.display = cartDiv.style.display === "block" ? "none" : "block";
+    let cartElement = document.getElementById("cart");
+    cartElement.style.display = cartElement.style.display === "none" ? "block" : "none";
 }
 
-function checkout() {
-    if (cart.length === 0) {
-        alert("ตะกร้าสินค้าว่าง! กรุณาเลือกสินค้าก่อน");
-        return;
-    }
-
-    let orderDetails = cart.map(item => `${item.name} x${item.quantity}`).join(", ");
-    let total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    let message = `🛍️ สั่งซื้อสินค้า: ${orderDetails} | ราคารวม ${total} บาท`;
-    
-    let lineURL = `https://line.me/ti/p/~OJY81U61Jk?text=${encodeURIComponent(message)}`;
-
-    window.open(lineURL, "_blank");
-}
+// เรียกใช้ updateCart() ตอนโหลดหน้าเว็บ
+document.addEventListener("DOMContentLoaded", updateCart);
