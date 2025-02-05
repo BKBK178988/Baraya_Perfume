@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let qrImage = document.getElementById("qr-code");
 
     // ✅ สร้าง QR Code พร้อมเพย์อัตโนมัติ
-    let promptpayNumber = "0812345678"; // 🔹 ใส่หมายเลขพร้อมเพย์ที่ถูกต้อง
+    let promptpayNumber = "0639392988"; // 🔹 ใส่หมายเลขพร้อมเพย์ที่ถูกต้อง
     let qrLink = `https://promptpay.io/${promptpayNumber}/${totalPrice}.png`;
     qrImage.src = qrLink;
 });
