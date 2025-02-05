@@ -144,3 +144,31 @@ input, textarea {
     margin-top: 10px;
     border-radius: 5px;
 }
+.checkout-steps {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.checkout-steps h2 {
+    text-align: center;
+    color: #d4af37;
+}
+
+.checkout-steps ol {
+    padding-left: 20px;
+    font-size: 16px;
+}
+
+.checkout-steps ol li {
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.checkout-steps ul {
+    padding-left: 40px;
+    list-style-type: disc;
+}
