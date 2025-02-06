@@ -6,7 +6,15 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice)
     formData.append("phone", phone);
     formData.append("orderDetails", orderDetails);
     formData.append("totalPrice", totalPrice);
-
+    
+    let cart = JSON.parse(cartData);
+    let qrImage = document.getElementById("qr-code");
+ 
+    // ✅ สร้าง QR Code พร้อมเพย์
+    let promptpayNumber = "0639392988"; // 🔹 เปลี่ยนเป็นหมายเลขพร้อมเพย์ของคุณ
+    let qrLink = `https://promptpay.io/${promptpayNumber}/${totalPrice}.png`;
+    qrImage.src = qrLink;
+});
     return fetch("send_email.php", {
         method: "POST",
         body: formData
