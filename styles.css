@@ -1,9 +1,12 @@
 body {
     font-family: Arial, sans-serif;
     text-align: center;
-    background-color: #f8f8f8;
+    background-color: #f7e5e0; /* 🌸 สี Rose Gold อ่อน ๆ */
     margin: 0;
     padding: 0;
+}
+body {
+    background: linear-gradient(to bottom, #fceee7, #f7e5e0); /* ไล่สี Rose Gold */
 }
 
 header {
