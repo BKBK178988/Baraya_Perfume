@@ -9,7 +9,7 @@ require 'PHPMailer/SMTP.php';
 $mail = new PHPMailer(true);
 
 try {
-    // ✅ รับข้อมูลจาก POST (ดึงข้อมูลที่ลูกค้ากรอก)
+    // ✅ รับข้อมูลจาก POST
     $customer_name = $_POST['name'];
     $customer_email = $_POST['email'];
     $customer_address = $_POST['address'];
