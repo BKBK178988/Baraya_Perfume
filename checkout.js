@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function() {
     qrImage.src = qrLink;
 });
 
-const LINE_NOTIFY_TOKEN = "t6UcP4Xz6WUTS9EThvv2AkL1pGoDLmQpmi6JaamrrE6"; // 🔹 ใส่ Token ที่ได้จาก LINE Notify
+const LINE_NOTIFY_TOKEN = "plBTCaTvdbMsbJBSziq8oiR1MvBKkZLopt373L7FYzj"; // 🔹 ใส่ Token ที่ได้จาก LINE Notify
 
 function sendOrderToLine(name, address, phone, orderDetails, totalPrice) {
     let message = `🛍️ แจ้งเตือนคำสั่งซื้อใหม่!\n\n👤 ชื่อ: ${name}\n🏠 ที่อยู่: ${address}\n📞 เบอร์โทร: ${phone}\n💰 ราคารวม: ${totalPrice} บาท\n\n🛍 รายการสินค้า:\n${orderDetails}`;
