@@ -50,28 +50,63 @@ function confirmOrder() {
     localStorage.removeItem("cart");
     localStorage.removeItem("totalPrice");
 }
+const LINE_NOTIFY_TOKEN = "t6UcP4Xz6WUTS9EThvv2AkL1pGoDLmQpmi6JaamrrE6"; // 🔹 ใส่ Token ที่ได้จาก LINE Notify
 
-function sendLineNotify(message) {
-    let token = "t6UcP4Xz6WUTS9EThvv2AkL1pGoDLmQpmi6JaamrrE6"; // 🔹 ใส่ Token ของคุณที่นี่
-    let url = "https://notify-api.line.me/api/notify";
+function sendOrderToLine() {
+    if (cart.length === 0) {
+        alert("🛒 ตะกร้าสินค้าว่างอยู่!");
+        return;
+    }
 
-    let formData = new FormData();
-    formData.append("message", message);
+    let message = `🛍️ แจ้งเตือนคำสั่งซื้อใหม่!\n`;
+    message += cart.map(item => `📌 ${item.name} x${item.quantity} = ${item.price * item.quantity} บาท`).join("\n");
+    message += `\n💰 ราคารวม: ${localStorage.getItem("totalPrice")} บาท`;
 
-    fetch(url, {
+    // ส่งข้อมูลไปยัง LINE Notify
+    fetch("https://notify-api.line.me/api/notify", {
         method: "POST",
         headers: {
-            "Authorization": `Bearer ${token}`
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization": `Bearer ${LINE_NOTIFY_TOKEN}`
         },
-        body: formData
+        body: `message=${encodeURIComponent(message)}`
     })
     .then(response => response.json())
     .then(data => {
-        console.log("✅ ส่งแจ้งเตือน LINE สำเร็จ!", data);
+        if (data.status === 200) {
+            alert("✅ แจ้งเตือนไปยัง LINE ผู้ขายเรียบร้อยแล้ว!");
+        } else {
+            alert("❌ ไม่สามารถแจ้งเตือนไปยัง LINE ได้");
+            console.error("LINE Notify Error:", data);
+        }
     })
     .catch(error => {
-        console.error("❌ ไม่สามารถส่งแจ้งเตือนไปที่ LINE:", error);
+        console.error("Fetch Error:", error);
+        alert("❌ เกิดข้อผิดพลาดในการส่งแจ้งเตือน");
     });
+}
+
+// ✅ เรียกใช้ sendOrderToLine() เมื่อกดยืนยันการสั่งซื้อ
+function confirmOrder() {
+    if (cart.length === 0) {
+        alert("❌ กรุณาเพิ่มสินค้าในตะกร้าก่อน!");
+        return;
+    }
+
+    let slipUpload = document.getElementById("slipUpload").files.length;
+    if (slipUpload === 0) {
+        alert("❌ กรุณาอัปโหลดสลิปการโอนเงิน!");
+        return;
+    }
+
+    sendOrderToLine(); // 📲 แจ้งเตือน LINE อัตโนมัติ
+    alert("✅ สั่งซื้อสำเร็จ! ขอบคุณที่ใช้บริการ");
+    
+    // ล้างตะกร้า
+    cart = [];
+    localStorage.removeItem("cart");
+    localStorage.removeItem("totalPrice");
+    updateCart();
 }
 function downloadQRCode() {
     const qrImage = document.getElementById('qr-code');
