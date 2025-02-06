@@ -1,12 +1,15 @@
 function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice) {
-    let message = `🛍️ แจ้งเตือนคำสั่งซื้อใหม่!\n\n👤 ชื่อ: ${name}\n📧 อีเมลลูกค้า: ${email}\n🏠 ที่อยู่: ${address}\n📞 เบอร์โทร: ${phone}\n💰 ราคารวม: ${totalPrice} บาท\n\n🛍 รายการสินค้า:\n${orderDetails}`;
+    let formData = new FormData();
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("address", address);
+    formData.append("phone", phone);
+    formData.append("orderDetails", orderDetails);
+    formData.append("totalPrice", totalPrice);
 
     return fetch("send_email.php", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: `message=${encodeURIComponent(message)}&email=${encodeURIComponent(email)}`
+        body: formData
     })
     .then(response => response.text())
     .then(data => {
