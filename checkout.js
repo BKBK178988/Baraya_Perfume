@@ -73,3 +73,17 @@ function sendLineNotify(message) {
         console.error("❌ ไม่สามารถส่งแจ้งเตือนไปที่ LINE:", error);
     });
 }
+function downloadQRCode() {
+    const qrImage = document.getElementById('qr-code');
+    if (!qrImage.src || qrImage.src === window.location.href) {
+        alert("QR Code ยังไม่ถูกโหลด กรุณาลองใหม่อีกครั้ง!");
+        return;
+    }
+
+    const link = document.createElement('a');
+    link.href = qrImage.src;
+    link.download = "QR_Code_PromptPay.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
