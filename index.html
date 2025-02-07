@@ -96,6 +96,40 @@
         <a href="checkout.html" class="checkout-button">🛍️ ดำเนินการสั่งซื้อ</a>
         <a id="lineOrderButton" href="#" target="_blank" class="checkout-button">📲 สั่งซื้อผ่าน LINE</a>
     </div>
+<!-- เพิ่มปุ่มบันทึกออเดอร์เป็นรูปภาพ -->
+<div id="cart" class="cart hidden">
+    <h2>🛒 ตะกร้าสินค้า</h2>
+    <ul id="cart-items"></ul>
+    <p id="total-price">ราคารวม: 0 บาท</p>
+    <button id="saveOrderButton">📸 บันทึกออเดอร์เป็นรูปภาพ</button>
+    <a href="checkout.html" class="checkout-button">🛍️ ดำเนินการสั่งซื้อ</a>
+    <a id="lineOrderButton" href="#" target="_blank" class="checkout-button">📲 สั่งซื้อผ่าน LINE</a>
+</div>
+
+<!-- เพิ่มคำแนะนำเกี่ยวกับการสั่งซื้อ -->
+<section class="order-steps">
+    <h2>🛍️ วิธีการสั่งซื้อ</h2>
+    <ol>
+        <li>เลือกสินค้าและเพิ่มลงตะกร้า</li>
+        <li>กดปุ่ม "📸 บันทึกออเดอร์เป็นรูปภาพ"</li>
+        <li>เพิ่มเพื่อนผู้ขายผ่าน <a href="https://line.me/ti/p/OJY81U61Jk" target="_blank">LINE</a></li>
+        <li>ส่งรูปภาพออเดอร์ที่บันทึกไว้ให้ผู้ขาย</li>
+        <li>รอรับข้อมูลและยืนยันคำสั่งซื้อ</li>
+    </ol>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+    document.getElementById("saveOrderButton").addEventListener("click", function() {
+        let cartElement = document.getElementById("cart");
+        html2canvas(cartElement).then(canvas => {
+            let link = document.createElement("a");
+            link.href = canvas.toDataURL("image/png");
+            link.download = "order.png";
+            link.click();
+        });
+    });
+</script>
 
  
     <footer>
