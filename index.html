@@ -118,13 +118,29 @@
             alert("❌ กรุณาเพิ่มสินค้าลงตะกร้าก่อนบันทึกออเดอร์");
             return;
         }
-        
+
         let cartElement = document.getElementById("cart");
-        html2canvas(cartElement).then(canvas => {
-            let link = document.createElement("a");
-            link.href = canvas.toDataURL("image/png");
-            link.download = "order.png";
-            link.click();
+        html2canvas(cartElement, { scale: 2 }).then(canvas => {
+            canvas.toBlob(blob => {
+                let file = new File([blob], "order.png", { type: "image/png" });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    // 📲 แชร์ไฟล์ไปยังแอปต่าง ๆ บนมือถือ (LINE, Messenger ฯลฯ)
+                    navigator.share({
+                        files: [file],
+                        title: "สั่งซื้อสินค้า",
+                        text: "นี่คือรายการสินค้าที่ฉันต้องการสั่งซื้อ",
+                    }).catch(error => console.error("❌ แชร์ไม่สำเร็จ:", error));
+                } else {
+                    // 📥 ดาวน์โหลดรูปภาพบนมือถือ
+                    let link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = "order.png";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }, "image/png");
         });
     });
 </script>
