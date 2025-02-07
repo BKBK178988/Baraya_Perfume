@@ -121,6 +121,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
     document.getElementById("saveOrderButton").addEventListener("click", function() {
+<<<<<<< Updated upstream
+=======
+        let cartItems = document.getElementById("cart-items");
+        if (cartItems.children.length === 0) {
+            alert("❌ กรุณาเพิ่มสินค้าลงตะกร้าก่อนบันทึกออเดอร์");
+            return;
+        }
+        
+>>>>>>> Stashed changes
         let cartElement = document.getElementById("cart");
         html2canvas(cartElement).then(canvas => {
             let link = document.createElement("a");
