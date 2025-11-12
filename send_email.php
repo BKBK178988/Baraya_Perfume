@@ -9,13 +9,23 @@ require 'PHPMailer/SMTP.php';
 $mail = new PHPMailer(true);
 
 try {
-    // ✅ รับข้อมูลจาก POST
-    $customer_name = $_POST['name'];
-    $customer_email = $_POST['email'];
-    $customer_address = $_POST['address'];
-    $customer_phone = $_POST['phone'];
+    // ✅ รับและตรวจสอบข้อมูลจาก POST
+    if (empty($_POST['name']) || empty($_POST['email']) || empty($_POST['address']) || 
+        empty($_POST['phone']) || empty($_POST['orderDetails']) || empty($_POST['totalPrice'])) {
+        throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วน');
+    }
+
+    $customer_name = trim($_POST['name']);
+    $customer_email = filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL);
+    $customer_address = trim($_POST['address']);
+    $customer_phone = trim($_POST['phone']);
     $order_details = $_POST['orderDetails'];
-    $total_price = $_POST['totalPrice'];
+    $total_price = trim($_POST['totalPrice']);
+
+    // ตรวจสอบความถูกต้องของอีเมล
+    if (!$customer_email) {
+        throw new Exception('รูปแบบอีเมลไม่ถูกต้อง');
+    }
 
     // ✅ ตั้งค่า SMTP
     $mail->isSMTP();
