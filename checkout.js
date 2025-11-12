@@ -21,10 +21,31 @@ document.addEventListener("DOMContentLoaded", function() {
     } else {
         console.error("❌ ไม่พบ <img id='qr-code'> ใน HTML");
     }
+
+    // ซ่อนตัวอย่างสลิปถ้ายังไม่มีไฟล์
+    const slipPreviewContainer = document.getElementById('slipPreviewContainer');
+    if (slipPreviewContainer && !document.getElementById('slipUpload').files.length) {
+        slipPreviewContainer.classList.add('hidden');
+    }
 });
 
-// ✅ ฟังก์ชันส่งข้อมูลไปยังอีเมล
-function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice) {
+// ✅ ฟังก์ชันแสดงตัวอย่างสลิป (preview)
+function previewSlip() {
+    const input = document.getElementById('slipUpload');
+    const file = input.files[0];
+    if (!file) return;
+    const img = document.getElementById('slipPreview');
+    img.src = URL.createObjectURL(file);
+    const container = document.getElementById('slipPreviewContainer');
+    if (container) container.classList.remove('hidden');
+}
+
+// ✅ ฟังก์ชันส่งข้อมูลไปยังอีเมล / ฟอร์ม endpoint
+// NOTE: GitHub Pages เป็น static hosting และไม่สามารถรัน PHP ได้ ดังนั้นต้องเปลี่ยน endpoint เป็นบริการภายนอก
+// ตัวอย่างด้านล่างใช้ Formspree: https://formspree.io/
+// - ลงทะเบียนที่ Formspree แล้วสร้าง Form (จะได้ form ID เช่น f/xxxxx) แล้วเอา ID ไปใส่แทน "YOUR_FORM_ID"
+// - ถ้าต้องการใช้บริการอื่น (EmailJS, Netlify Functions, Vercel, Firebase) ให้เปลี่ยน URL และกำหนดค่าให้เหมาะสม
+function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
     let formData = new FormData();
     formData.append("name", name);
     formData.append("email", email);
@@ -32,22 +53,38 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice)
     formData.append("phone", phone);
     formData.append("orderDetails", orderDetails);
     formData.append("totalPrice", totalPrice);
+    if (slipFile) {
+        // เพิ่มไฟล์สลิปลงใน FormData
+        formData.append("slip", slipFile);
+    }
 
-    return fetch("send_email.php", {
+    // เปลี่ยน URL นี้เป็น endpoint ของคุณ (Formspree หรือ backend ที่รองรับ)
+    const endpoint = "https://formspree.io/f/YOUR_FORM_ID"; // <-- เปลี่ยน YOUR_FORM_ID
+
+    return fetch(endpoint, {
         method: "POST",
         body: formData
+        // อย่าใส่ header Content-Type เมื่อส่ง FormData (เบราว์เซอร์จะกำหนด boundary ให้เอง)
     })
-    .then(response => response.text())
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text || response.statusText); });
+        }
+        return response.text();
+    })
     .then(data => {
-        alert(data); // แสดงผลว่าอีเมลส่งสำเร็จหรือไม่
+        // แสดงข้อความที่ endpoint ตอบกลับ (หรือแสดงข้อความสำเร็จมาตรฐาน)
+        alert("✅ อัปโหลดข้อมูลสำเร็จ! ขอบคุณที่สั่งซื้อ");
+        return data;
     })
     .catch(error => {
-        console.error("❌ Error sending email:", error);
-        alert("❌ เกิดข้อผิดพลาดในการส่งอีเมล");
+        console.error("❌ Error sending order:", error);
+        alert("❌ เกิดข้อผิดพลาดในการส่งคำสั่งซื้อ: " + (error.message || error));
+        throw error;
     });
 }
 
-// ✅ ฟังก์ชันยืนยันคำสั่งซื้อ
+// ✅ ฟังก์ชันยืนยันคำสั่งซื้อ (เรียก sendOrderToEmail พร้อมไฟล์สลิป)
 function confirmOrder() {
     let name = document.getElementById("customer-name").value;
     let email = document.getElementById("customer-email").value;
@@ -69,19 +106,17 @@ function confirmOrder() {
     let orderDetails = cart.map(item => `📦 ${item.name} x${item.quantity} - ${item.price * item.quantity} บาท`).join("\n");
     let totalPrice = localStorage.getItem("totalPrice");
 
-    // ✅ ส่งอีเมลไปยังเจ้าของร้านพร้อมข้อมูลลูกค้า
-    sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice)
+    // ส่งอีเมล/ฟอร์มไปยัง endpoint ภายนอก
+    sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile)
     .then(() => {
-        alert("✅ สั่งซื้อสำเร็จ! อีเมลแจ้งเตือนถูกส่งแล้ว");
-
-        // ✅ ล้างตะกร้าหลังจากสั่งซื้อสำเร็จ
+        // ล้างตะกร้าหลังจากสำเร็จ
         localStorage.removeItem("cart");
         localStorage.removeItem("totalPrice");
 
-        // ✅ รีเฟรชหน้าหรือพาผู้ใช้กลับไปยังหน้าแรก
+        // พาผู้ใช้กลับหน้าแรก
         window.location.href = "index.html";
     })
     .catch(error => {
-        console.error("❌ เกิดข้อผิดพลาด:", error);
+        console.error("❌ เกิดข้อผิดพลาดในการยืนยันคำสั่งซื้อ:", error);
     });
 }
