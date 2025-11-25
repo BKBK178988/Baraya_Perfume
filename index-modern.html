@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BARAYA PERFUME - น้ำหอมแท้ คุณภาพพรีเมียม</title>
+    <link rel="stylesheet" href="styles-modern.css">
+    <meta name="description" content="น้ำหอมแท้ หรูหรา หอมติดทน ราคาพิเศษ">
+</head>
+<body>
+
+    <header>
+        <h1>💐 BARAYA PERFUME</h1>
+        <p>น้ำหอมแท้ หรูหรา หอมติดทน ✨</p>
+        <div style="display:flex; align-items:center; gap:12px; justify-content:center;">
+            <div id="auth-area"></div>
+            <button class="cart-button" onclick="toggleCart()">
+                🛒 ตะกร้าสินค้า (<span id="cart-count">0</span>)
+            </button>
+        </div>
+    </header>
+
+    <section class="products">
+        <!-- Product 1 - AQUA.M -->
+        <div class="product" data-name="AQUA.M" data-price="199">
+            <span class="product-badge bestseller">ขายดี</span>
+            <img src="AQUA.M.png" alt="AQUA.M น้ำหอม">
+            <div class="product-rating">
+                <span class="stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-count">(124)</span>
+            </div>
+            <h3>AQUA.M</h3>
+            <p>แนวสปอร์ต เท่ หรูหรา สดชื่น 🌊</p>
+            <span class="product-price">199 บาท</span>
+            <button class="add-to-cart" onclick="addToCartModern(this, 'AQUA.M', 199)">
+                🛒 เพิ่มลงตะกร้า
+            </button>
+        </div>
+
+        <!-- Product 2 - BOMBSHELL -->
+        <div class="product" data-name="BOMBSHELL" data-price="199">
+            <span class="product-badge new">ใหม่</span>
+            <img src="BOMSHELL.png" alt="BOMBSHELL น้ำหอม">
+            <div class="product-rating">
+                <span class="stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-count">(98)</span>
+            </div>
+            <h3>BOMBSHELL</h3>
+            <p>หอมเซ็กซี่ ขี้เล่น ฟรุ๊ตตี้ 💋</p>
+            <span class="product-price">199 บาท</span>
+            <button class="add-to-cart" onclick="addToCartModern(this, 'BOMBSHELL', 199)">
+                🛒 เพิ่มลงตะกร้า
+            </button>
+        </div>
+
+        <!-- Product 3 - FIRST LOVE -->
+        <div class="product" data-name="FIRST LOVE" data-price="199">
+            <span class="product-badge bestseller">ขายดี</span>
+            <img src="FIRST LOVE.png" alt="FIRST LOVE น้ำหอม">
+            <div class="product-rating">
+                <span class="stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-count">(156)</span>
+            </div>
+            <h3>FIRST LOVE</h3>
+            <p>หอมหวานละมุน น่าหลงใหล 💖</p>
+            <span class="product-price">199 บาท</span>
+            <button class="add-to-cart" onclick="addToCartModern(this, 'FIRST LOVE', 199)">
+                🛒 เพิ่มลงตะกร้า
+            </button>
+        </div>
+
+        <!-- Product 4 - MONG BLACK -->
+        <div class="product" data-name="MONG BLACK" data-price="199">
+            <span class="product-badge limited">จำกัด</span>
+            <img src="MONG BLACK.png" alt="MONG BLACK น้ำหอม">
+            <div class="product-rating">
+                <span class="stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-count">(87)</span>
+            </div>
+            <h3>MONG BLACK</h3>
+            <p>หรูหรา ไฮโซ มีเสน่ห์แบบผู้ชาย 🖤</p>
+            <span class="product-price">199 บาท</span>
+            <button class="add-to-cart" onclick="addToCartModern(this, 'MONG BLACK', 199)">
+                🛒 เพิ่มลงตะกร้า
+            </button>
+        </div>
+
+        <!-- Product 5 - VIN VIN -->
+        <div class="product" data-name="VIN VIN" data-price="199">
+            <img src="VIN VIN.png" alt="VIN VIN น้ำหอม">
+            <div class="product-rating">
+                <span class="stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-count">(92)</span>
+            </div>
+            <h3>VIN VIN</h3>
+            <p>หอมละมุน น่ารัก สดใส น่าเอ็นดู 🌸</p>
+            <span class="product-price">199 บาท</span>
+            <button class="add-to-cart" onclick="addToCartModern(this, 'VIN VIN', 199)">
+                🛒 เพิ่มลงตะกร้า
+            </button>
+        </div>
+
+        <!-- Product 6 - BERRY HER -->
+        <div class="product" data-name="BERRY HER" data-price="199">
+            <span class="product-badge new">ใหม่</span>
+            <img src="BERRY.png" alt="BERRY HER น้ำหอม">
+            <div class="product-rating">
+                <span class="stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-count">(76)</span>
+            </div>
+            <h3>BERRY HER</h3>
+            <p>สาวหวานแคนดี้ ละมุน ยั่วยวน 🍓</p>
+            <span class="product-price">199 บาท</span>
+            <button class="add-to-cart" onclick="addToCartModern(this, 'BERRY HER', 199)">
+                🛒 เพิ่มลงตะกร้า
+            </button>
+        </div>
+
+        <!-- Product 7 - READY PINK -->
+        <div class="product" data-name="READY PINK" data-price="199">
+            <span class="product-badge bestseller">ขายดี</span>
+            <img src="READY PINK.png" alt="READY PINK น้ำหอม">
+            <div class="product-rating">
+                <span class="stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-count">(134)</span>
+            </div>
+            <h3>READY PINK</h3>
+            <p>หอมหวานหรู ผู้ดี สไตล์คุณหนู 👑</p>
+            <span class="product-price">199 บาท</span>
+            <button class="add-to-cart" onclick="addToCartModern(this, 'READY PINK', 199)">
+                🛒 เพิ่มลงตะกร้า
+            </button>
+        </div>
+
+        <!-- Product 8 - BLACK.M -->
+        <div class="product" data-name="BLACK.M" data-price="199">
+            <img src="BLACK M..png" alt="BLACK.M น้ำหอม">
+            <div class="product-rating">
+                <span class="stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-count">(110)</span>
+            </div>
+            <h3>BLACK.M</h3>
+            <p>กลิ่นสุขุม อบอุ่น สะอาด หรูหรา ⚫</p>
+            <span class="product-price">199 บาท</span>
+            <button class="add-to-cart" onclick="addToCartModern(this, 'BLACK.M', 199)">
+                🛒 เพิ่มลงตะกร้า
+            </button>
+        </div>
+
+        <!-- Product 9 - CRYSTAL -->
+        <div class="product" data-name="CRYSTAL" data-price="199">
+            <img src="CRYSTAL.png" alt="CRYSTAL น้ำหอม">
+            <div class="product-rating">
+                <span class="stars">⭐⭐⭐⭐⭐</span>
+                <span class="rating-count">(88)</span>
+            </div>
+            <h3>CRYSTAL</h3>
+            <p>สะอาด สดชื่น อ่อนโยน 💎</p>
+            <span class="product-price">199 บาท</span>
+            <button class="add-to-cart" onclick="addToCartModern(this, 'CRYSTAL', 199)">
+                🛒 เพิ่มลงตะกร้า
+            </button>
+        </div>
+
+    </section>
+    
+    <!-- ตะกร้าสินค้า -->
+    <div id="cart" class="cart">
+        <h2>🛒 ตะกร้าสินค้า</h2>
+        <ul id="cart-items"></ul>
+        <p id="total-price">ราคารวม: 0 บาท</p>
+        <button id="saveOrderButton" class="checkout-btn" style="background: linear-gradient(135deg, #4facfe, #00f2fe); margin-bottom: 10px;">
+            📸 บันทึกออเดอร์เป็นรูปภาพ
+        </button>
+        <a href="checkout-modern.html" class="checkout-btn" style="display: block; text-decoration: none; text-align: center;">
+            🛍️ ดำเนินการสั่งซื้อ
+        </a>
+        <a id="lineOrderButton" href="#" target="_blank" class="checkout-btn" style="display: block; text-decoration: none; text-align: center; margin-top: 10px; background: linear-gradient(135deg, #06c755, #05a74c);">
+            📲 สั่งซื้อผ่าน LINE
+        </a>
+    </div>
+
+    <!-- วิธีการสั่งซื้อ -->
+    <section style="max-width: 800px; margin: 60px auto; padding: 40px; background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+        <h2 style="text-align: center; color: #d4af37; margin-bottom: 30px;">🛍️ วิธีการสั่งซื้อ</h2>
+        <ol style="line-height: 2; font-size: 1.1em; color: #333; text-align: left; padding-left: 30px;">
+            <li>เลือกสินค้าและเพิ่มลงตะกร้า 🛒</li>
+            <li>กดปุ่ม "ดำเนินการสั่งซื้อ" 📝</li>
+            <li>กรอกข้อมูลการจัดส่ง ✍️</li>
+            <li>สแกน QR Code เพื่อชำระเงิน 💳</li>
+            <li>อัปโหลดสลิปการโอนเงิน 📸</li>
+            <li>รอรับอีเมลยืนยันการสั่งซื้อ ✅</li>
+        </ol>
+    </section>
+
+    <footer>
+        <p style="margin: 10px 0;">
+            📱 <a href="https://line.me/ti/p/OJY81U61Jk" target="_blank" style="color: #d4af37; text-decoration: none;">LINE</a> | 
+            📧 <a href="mailto:Barame07042536@gmail.com" style="color: #d4af37; text-decoration: none;">Email</a>
+        </p>
+        <p style="color: #666;">&copy; 2025 BARAYA PERFUME - น้ำหอมแท้คุณภาพพรีเมียม</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="html2canvas.min.js"></script>
+    <script src="modern-features.js"></script>
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        // รอให้ทุกอย่างโหลดเสร็จก่อน
+        window.addEventListener('load', function() {
+            console.log('Page fully loaded');
+            console.log('html2canvas available:', typeof html2canvas !== 'undefined');
+            console.log('toast available:', typeof window.toast !== 'undefined');
+            console.log('showLoading available:', typeof window.showLoading !== 'undefined');
+        });
+
+        // ปรับปรุงฟังก์ชัน addToCart ให้ใช้ Toast
+        function addToCartModern(button, name, price) {
+            addToCart(name, price);
+            animateAddToCart(button);
+            if (window.toast) {
+                toast.success(`เพิ่ม ${name} ลงตะกร้าแล้ว!`, 2000);
+            }
+        }
+
+        // Save Order to Image - แก้ไขใหม่ให้ทำงานง่ายขึ้น
+        const saveOrderBtn = document.getElementById("saveOrderButton");
+        if (saveOrderBtn) {
+            saveOrderBtn.addEventListener("click", async function() {
+                console.log('🔵 กดปุ่มบันทึกออเดอร์');
+                
+                // ตรวจสอบตะกร้า
+                const cartItems = document.getElementById("cart-items");
+                if (!cartItems || cartItems.children.length === 0) {
+                    alert("⚠️ กรุณาเพิ่มสินค้าลงตะกร้าก่อนบันทึกออเดอร์");
+                    return;
+                }
+
+                // ตรวจสอบ html2canvas
+                if (typeof html2canvas === 'undefined') {
+                    alert("❌ โปรดรีเฟรชหน้าเว็บแล้วลองใหม่");
+                    return;
+                }
+
+                try {
+                    // แสดง loading
+                    if (window.showLoading) showLoading('กำลังสร้างรูปภาพ...');
+                    
+                    const cartElement = document.getElementById("cart");
+                    console.log('🔵 เริ่มจับภาพตะกร้า...');
+                    
+                    // จับภาพด้วย html2canvas
+                    const canvas = await html2canvas(cartElement, { 
+                        scale: 2,
+                        backgroundColor: '#ffffff',
+                        logging: true,
+                        useCORS: true,
+                        allowTaint: true
+                    });
+                    
+                    console.log('✅ สร้าง canvas สำเร็จ');
+                    
+                    // แปลง canvas เป็น blob
+                    canvas.toBlob(async (blob) => {
+                        if (!blob) {
+                            throw new Error('ไม่สามารถสร้าง blob');
+                        }
+                        
+                        console.log('✅ สร้าง blob สำเร็จ, ขนาด:', blob.size);
+                        
+                        // สร้างลิงก์ดาวน์โหลด
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        const timestamp = new Date().getTime();
+                        link.download = `BARAYA_ORDER_${timestamp}.png`;
+                        link.href = url;
+                        
+                        // คลิกดาวน์โหลด
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
+                        // ล้าง URL object
+                        setTimeout(() => URL.revokeObjectURL(url), 100);
+                        
+                        if (window.hideLoading) hideLoading();
+                        
+                        // แจ้งเตือนสำเร็จ
+                        if (window.toast) {
+                            toast.success("💾 บันทึกรูปภาพสำเร็จ!");
+                        } else {
+                            alert("✅ บันทึกรูปภาพสำเร็จ!");
+                        }
+                        
+                        console.log('✅ ดาวน์โหลดสำเร็จ');
+                        
+                    }, 'image/png', 1.0);
+                    
+                } catch (error) {
+                    console.error('❌ Error:', error);
+                    if (window.hideLoading) hideLoading();
+                    alert("❌ เกิดข้อผิดพลาด: " + error.message);
+                }
+            });
+        } else {
+            console.error('❌ ไม่พบปุ่ม saveOrderButton');
+        }
+
+        // ฟังก์ชันสำรองสำหรับดาวน์โหลดรูป
+        function downloadImageFallback(blob) {
+            try {
+                let link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "baraya_perfume_order.png";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                if (window.hideLoading) hideLoading();
+                if (window.toast) {
+                    toast.success("ดาวน์โหลดรูปภาพสำเร็จ!");
+                } else {
+                    alert("✅ ดาวน์โหลดรูปภาพสำเร็จ!");
+                }
+                
+                // ล้าง URL object
+                setTimeout(() => URL.revokeObjectURL(link.href), 100);
+            } catch (error) {
+                console.error('Download failed:', error);
+                if (window.hideLoading) hideLoading();
+                if (window.toast) {
+                    toast.error("ไม่สามารถดาวน์โหลดรูปภาพได้");
+                } else {
+                    alert("❌ ไม่สามารถดาวน์โหลดรูปภาพได้");
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>
