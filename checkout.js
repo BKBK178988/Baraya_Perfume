@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (!cartData || cartData === "[]") {
         alert("⚠️ ตะกร้าสินค้าว่างเปล่า! กลับไปเลือกสินค้าก่อนทำการชำระเงิน");
-        window.location.href = "index.html";
+        window.location.href = "index-modern.html";
         return;
     }
 
@@ -40,12 +40,10 @@ function previewSlip() {
     if (container) container.classList.remove('hidden');
 }
 
-// ✅ ฟังก์ชันส่งข้อมูลไปยังอีเมล / ฟอร์ม endpoint
-// NOTE: GitHub Pages เป็น static hosting และไม่สามารถรัน PHP ได้ ดังนั้นต้องเปลี่ยน endpoint เป็นบริการภายนอก
-// ตัวอย่างด้านล่างใช้ Formspree: https://formspree.io/
-// - ลงทะเบียนที่ Formspree แล้วสร้าง Form (จะได้ form ID เช่น f/xxxxx) แล้วเอา ID ไปใส่แทน "YOUR_FORM_ID"
-// - ถ้าต้องการใช้บริการอื่น (EmailJS, Netlify Functions, Vercel, Firebase) ให้เปลี่ยน URL และกำหนดค่าให้เหมาะสม
+// ✅ ฟังก์ชันส่งข้อมูลไปยังอีเมลผ่าน send_email.php
 function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
+    console.log('🔵 sendOrderToEmail called with:', {name, email, address, phone, totalPrice, hasSlip: !!slipFile});
+    
     let formData = new FormData();
     formData.append("name", name);
     formData.append("email", email);
@@ -53,33 +51,29 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice,
     formData.append("phone", phone);
     formData.append("orderDetails", orderDetails);
     formData.append("totalPrice", totalPrice);
+    
+    // ✅ แนบไฟล์สลิปการโอนเงิน
     if (slipFile) {
-        // เพิ่มไฟล์สลิปลงใน FormData
         formData.append("slip", slipFile);
+        console.log('🔵 Slip file attached:', slipFile.name, slipFile.size, 'bytes');
     }
 
-    // เปลี่ยน URL นี้เป็น endpoint ของคุณ (Formspree หรือ backend ที่รองรับ)
-    const endpoint = "https://formspree.io/f/YOUR_FORM_ID"; // <-- เปลี่ยน YOUR_FORM_ID
-
-    return fetch(endpoint, {
+    console.log('🔵 Sending to send_email.php...');
+    
+    return fetch("send_email.php", {
         method: "POST",
         body: formData
-        // อย่าใส่ header Content-Type เมื่อส่ง FormData (เบราว์เซอร์จะกำหนด boundary ให้เอง)
     })
     .then(response => {
-        if (!response.ok) {
-            return response.text().then(text => { throw new Error(text || response.statusText); });
-        }
+        console.log('🔵 Response status:', response.status);
         return response.text();
     })
     .then(data => {
-        // แสดงข้อความที่ endpoint ตอบกลับ (หรือแสดงข้อความสำเร็จมาตรฐาน)
-        alert("✅ อัปโหลดข้อมูลสำเร็จ! ขอบคุณที่สั่งซื้อ");
+        console.log('✅ Response data:', data);
         return data;
     })
     .catch(error => {
-        console.error("❌ Error sending order:", error);
-        alert("❌ เกิดข้อผิดพลาดในการส่งคำสั่งซื้อ: " + (error.message || error));
+        console.error("❌ Error:", error);
         throw error;
     });
 }
@@ -106,17 +100,26 @@ function confirmOrder() {
     let orderDetails = cart.map(item => `📦 ${item.name} x${item.quantity} - ${item.price * item.quantity} บาท`).join("\n");
     let totalPrice = localStorage.getItem("totalPrice");
 
-    // ส่งอีเมล/ฟอร์มไปยัง endpoint ภายนอก
+    // ส่งอีเมลผ่าน send_email.php
     sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile)
-    .then(() => {
-        // ล้างตะกร้าหลังจากสำเร็จ
-        localStorage.removeItem("cart");
-        localStorage.removeItem("totalPrice");
+    .then((response) => {
+        if (response.includes("✅")) {
+            alert("✅ สั่งซื้อสำเร็จ! อีเมลยืนยันถูกส่งแล้ว");
+            
+            // ล้างตะกร้าหลังจากสำเร็จ
+            localStorage.removeItem("cart");
+            localStorage.removeItem("totalPrice");
 
-        // พาผู้ใช้กลับหน้าแรก
-        window.location.href = "index.html";
+            // พาผู้ใช้กลับหน้าแรก
+            setTimeout(() => {
+                window.location.href = "index-modern.html";
+            }, 2000);
+        } else {
+            alert("❌ เกิดข้อผิดพลาดในการส่งอีเมล กรุณาติดต่อทางร้านโดยตรง");
+        }
     })
     .catch(error => {
         console.error("❌ เกิดข้อผิดพลาดในการยืนยันคำสั่งซื้อ:", error);
+        alert("❌ ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
     });
 }
