@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Form</title>
+</head>
+<body>
+    <h1>Test Form Submission</h1>
+    
+    <form id="testForm">
+        <input type="text" id="name" value="Test Name"><br>
+        <input type="email" id="email" value="test@test.com"><br>
+        <button type="button" id="submitBtn">Submit Test</button>
+    </form>
+    
+    <div id="result" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+    
+    <script>
+        document.getElementById('submitBtn').addEventListener('click', async function() {
+            console.log('🔵 Test button clicked');
+            
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('email', document.getElementById('email').value);
+            formData.append('address', '123 Test St');
+            formData.append('phone', '0123456789');
+            formData.append('orderDetails', 'Test Product x1 - 199 บาท');
+            formData.append('totalPrice', '199');
+            
+            try {
+                console.log('🔵 Sending request...');
+                const response = await fetch('send_email.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('🔵 Response status:', response.status);
+                const text = await response.text();
+                console.log('✅ Response:', text);
+                
+                document.getElementById('result').innerHTML = '<pre>' + text + '</pre>';
+            } catch (error) {
+                console.error('❌ Error:', error);
+                document.getElementById('result').innerHTML = '<pre style="color: red;">Error: ' + error.message + '</pre>';
+            }
+        });
+    </script>
+</body>
+</html>
