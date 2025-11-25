@@ -1,4 +1,9 @@
 <?php
+header('Content-Type: text/plain; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Headers: Content-Type');
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -6,16 +11,25 @@ require 'PHPMailer/Exception.php';
 require 'PHPMailer/PHPMailer.php';
 require 'PHPMailer/SMTP.php';
 
+// Log ข้อมูลที่รับเข้ามา
+error_log("📩 Received POST: " . print_r($_POST, true));
+error_log("📎 Received FILES: " . print_r($_FILES, true));
+
 $mail = new PHPMailer(true);
 
 try {
     // ✅ รับข้อมูลจาก POST
-    $customer_name = $_POST['name'];
-    $customer_email = $_POST['email'];
-    $customer_address = $_POST['address'];
-    $customer_phone = $_POST['phone'];
-    $order_details = $_POST['orderDetails'];
-    $total_price = $_POST['totalPrice'];
+    $customer_name = $_POST['name'] ?? '';
+    $customer_email = $_POST['email'] ?? '';
+    $customer_address = $_POST['address'] ?? '';
+    $customer_phone = $_POST['phone'] ?? '';
+    $order_details = $_POST['orderDetails'] ?? '';
+    $total_price = $_POST['totalPrice'] ?? '';
+
+    // ตรวจสอบข้อมูล
+    if (empty($customer_name) || empty($customer_email)) {
+        throw new Exception('ข้อมูลไม่ครบถ้วน');
+    }
 
     // ✅ ตั้งค่า SMTP
     $mail->isSMTP();
@@ -25,6 +39,7 @@ try {
     $mail->Password   = 'eezk fcqb hjgj auhb'; // 🔹 ใช้ "App Password" ที่สร้างจาก Google
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port       = 587;
+    $mail->CharSet    = 'UTF-8';
 
     // ✅ ตั้งค่าผู้ส่ง
     $mail->setFrom('Barame07042536@gmail.com', 'ร้านค้า Baraya Perfume');
