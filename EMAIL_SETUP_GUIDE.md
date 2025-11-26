@@ -211,10 +211,10 @@ emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
 **ตัวอย่างที่ถูกต้อง:**
 
 ```javascript
-emailjs.init("EUHurGnUrY9Q-SbaO");
+emailjs.init("YOUR_PUBLIC_KEY");  // เช่น "EUHurGnUrY9Q-SbaO"
 
 // ในฟังก์ชัน sendOrderToEmail:
-emailjs.send("service_sfp9xjq", "template_order", {
+emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {  // เช่น "service_sfp9xjq", "template_order"
     customer_name: name,
     customer_email: email,
     customer_address: address,
