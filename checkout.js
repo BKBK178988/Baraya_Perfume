@@ -164,3 +164,24 @@ function confirmOrder() {
         alert("❌ เกิดข้อผิดพลาดในการส่งอีเมล กรุณาติดต่อทางร้านโดยตรง");
     });
 }
+
+// ✅ ฟังก์ชันดาวน์โหลด QR Code
+function downloadQRCode() {
+    const qrImage = document.getElementById('qr-code');
+    if (!qrImage || !qrImage.src) {
+        alert('⚠️ ไม่พบ QR Code');
+        return;
+    }
+    
+    // ดาวน์โหลดรูป QR Code
+    const link = document.createElement('a');
+    link.href = qrImage.src;
+    link.download = 'BARAYA_PERFUME_QR_CODE.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    if (window.toast) {
+        toast.success('📥 ดาวน์โหลด QR Code สำเร็จ!');
+    }
+}
