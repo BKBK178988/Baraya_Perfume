@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if (cart.length === 0) {
         alert("⚠️ ตะกร้าสินค้าว่างเปล่า! กลับไปเลือกสินค้าก่อนทำการชำระเงิน");
-        window.location.href = "index-modern.html"; // หรือหน้าที่ถูกต้อง
+        window.location.href = "index.html";
         return;
     }
 
@@ -155,7 +155,7 @@ function confirmOrder() {
             localStorage.removeItem("totalPrice");
 
             setTimeout(() => {
-                window.location.href = "index-modern.html"; // หรือหน้าที่คุณต้องการ
+                window.location.href = "index.html";
             }, 2000);
         }
     })
