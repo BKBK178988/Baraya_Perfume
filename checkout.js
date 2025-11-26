@@ -185,7 +185,9 @@ function downloadQRCode() {
             toast.success('📥 กำลังดาวน์โหลด QR Code...');
         }
     } finally {
-        // ลบ link element ไม่ว่าจะสำเร็จหรือไม่
-        document.body.removeChild(link);
+        // ลบ link element ไม่ว่าจะสำเร็จหรือไม่ (ตรวจสอบว่ามีใน DOM ก่อน)
+        if (link.parentNode) {
+            document.body.removeChild(link);
+        }
     }
 }
