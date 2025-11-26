@@ -175,13 +175,17 @@ function downloadQRCode() {
     
     // ดาวน์โหลดรูป QR Code
     const link = document.createElement('a');
-    link.href = qrImage.src;
-    link.download = 'BARAYA_PERFUME_QR_CODE.png';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    if (window.toast) {
-        toast.success('📥 ดาวน์โหลด QR Code สำเร็จ!');
+    try {
+        link.href = qrImage.src;
+        link.download = 'BARAYA_PERFUME_QR_CODE.png';
+        document.body.appendChild(link);
+        link.click();
+        
+        if (window.toast) {
+            toast.success('📥 กำลังดาวน์โหลด QR Code...');
+        }
+    } finally {
+        // ลบ link element ไม่ว่าจะสำเร็จหรือไม่
+        document.body.removeChild(link);
     }
 }
