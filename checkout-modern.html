@@ -71,8 +71,10 @@
     <!-- EmailJS -->
     <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
     <script>
+        // ⚠️ สำคัญ! กรุณาเปลี่ยน Public Key ตามที่คุณสร้างใน EmailJS
+        // ดูได้ที่: https://dashboard.emailjs.com/admin/account
         (function(){
-            emailjs.init("EUHurGnUrY9Q-SbaO");
+            emailjs.init("YOUR_PUBLIC_KEY_HERE");
         })();
     </script>
 </head>
@@ -182,7 +184,10 @@
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    emailjs.send("service_sfp9xjq", "template_order", {
+                    // ⚠️ สำคัญ! กรุณาเปลี่ยน Service ID และ Template ID ตามที่คุณสร้างใน EmailJS
+                    // Service ID: https://dashboard.emailjs.com/admin
+                    // Template ID: https://dashboard.emailjs.com/admin/templates
+                    emailjs.send("YOUR_SERVICE_ID_HERE", "YOUR_TEMPLATE_ID_HERE", {
                         customer_name: name,
                         customer_email: email,
                         customer_address: address,

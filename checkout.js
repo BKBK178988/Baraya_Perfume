@@ -206,11 +206,14 @@ function previewSlip() {
 }
 
 // ✅ ฟังก์ชันส่งข้อมูลไปยังอีเมล (เปลี่ยนกลับไปใช้ EmailJS ตามที่อยู่ใน HTML เดิม)
+// ⚠️ สำคัญ! กรุณาเปลี่ยน Service ID และ Template ID ตามที่คุณสร้างใน EmailJS
+// Service ID: https://dashboard.emailjs.com/admin
+// Template ID: https://dashboard.emailjs.com/admin/templates
 function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = function(e) {
-            emailjs.send("service_sfp9xjq", "template_order", {
+            emailjs.send("YOUR_SERVICE_ID_HERE", "YOUR_TEMPLATE_ID_HERE", {
                 customer_name: name,
                 customer_email: email,
                 customer_address: address,
@@ -377,10 +380,20 @@ function confirmOrder() {
         // แสดง Error Message ที่ละเอียดมากขึ้น
         let errorMessage = "❌ เกิดข้อผิดพลาดในการส่งอีเมล\n\n";
         
-        if (error.status === 400) {
+        if (error.status === 400 && error.text && error.text.includes('template')) {
+            errorMessage += "สาเหตุ: ไม่พบ Email Template\n";
+            errorMessage += "กรุณาตรวจสอบ Template ID ใน EmailJS Dashboard\n";
+            errorMessage += "https://dashboard.emailjs.com/admin/templates";
+        } else if (error.status === 400 && error.text && error.text.includes('service')) {
+            errorMessage += "สาเหตุ: ไม่พบ Email Service\n";
+            errorMessage += "กรุณาตรวจสอบ Service ID ใน EmailJS Dashboard\n";
+            errorMessage += "https://dashboard.emailjs.com/admin";
+        } else if (error.status === 400) {
             errorMessage += "สาเหตุ: ข้อมูลที่ส่งไม่ถูกต้อง\nกรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง";
         } else if (error.status === 401 || error.status === 403) {
-            errorMessage += "สาเหตุ: ไม่สามารถเชื่อมต่อกับระบบอีเมลได้\nกรุณาติดต่อทางร้านโดยตรง";
+            errorMessage += "สาเหตุ: Public Key ไม่ถูกต้อง\n";
+            errorMessage += "กรุณาตรวจสอบ Public Key ใน EmailJS\n";
+            errorMessage += "https://dashboard.emailjs.com/admin/account";
         } else if (error.status === 429) {
             errorMessage += "สาเหตุ: ส่งคำขอมากเกินไป\nกรุณารอสักครู่แล้วลองใหม่อีกครั้ง";
         } else if (error.text) {
