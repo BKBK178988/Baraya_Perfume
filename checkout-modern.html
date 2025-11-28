@@ -5,6 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ชำระเงิน - BARAYA PERFUME</title>
     <link rel="stylesheet" href="styles-modern.css">
+    
+    <!-- Custom styles for form validation feedback -->
+    <style>
+        /* Input validation feedback styles */
+        .input-error {
+            border-color: #ff6b6b !important;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2) !important;
+        }
+        
+        .input-valid {
+            border-color: #06c755 !important;
+            box-shadow: 0 0 0 3px rgba(6, 199, 85, 0.2) !important;
+        }
+        
+        .field-hint {
+            color: #888;
+            font-size: 0.85em;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .required-mark {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        
+        /* Loading state for button */
+        #confirmOrderBtn:disabled {
+            background: #ccc !important;
+            cursor: not-allowed !important;
+            transform: none !important;
+        }
+        
+        /* Form section styling */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-requirements {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        
+        .form-requirements h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .form-requirements ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #856404;
+        }
+        
+        .form-requirements li {
+            margin-bottom: 5px;
+        }
+    </style>
 
     <!-- EmailJS -->
     <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
@@ -25,21 +87,42 @@
         <h2 style="text-align: center; color: #d4af37; margin-bottom: 30px;">
             📋 ข้อมูลสำหรับจัดส่ง
         </h2>
+        
+        <!-- คำแนะนำการกรอกข้อมูล -->
+        <div class="form-requirements">
+            <h4>📝 ข้อมูลที่จำเป็นต้องกรอก:</h4>
+            <ul>
+                <li>ชื่อ-นามสกุล (เพื่อใช้ในการจัดส่ง)</li>
+                <li>อีเมล (สำหรับรับใบยืนยันการสั่งซื้อ)</li>
+                <li>ที่อยู่จัดส่งแบบละเอียด</li>
+                <li>เบอร์โทรศัพท์ 10 หลัก (เริ่มต้นด้วย 0)</li>
+                <li>สลิปการโอนเงิน (รูปภาพขนาดไม่เกิน 5MB)</li>
+            </ul>
+        </div>
 
-        <label for="customer-name">👤 ชื่อ - นามสกุล:</label>
-        <input type="text" id="customer-name" placeholder="ชื่อ-นามสกุล" required>
+        <div class="form-group">
+            <label for="customer-name">👤 ชื่อ - นามสกุล: <span class="required-mark">*</span></label>
+            <input type="text" id="customer-name" placeholder="ชื่อ-นามสกุล" required>
+            <small class="field-hint">กรอกชื่อจริงและนามสกุลสำหรับการจัดส่ง</small>
+        </div>
 
-        <label for="customer-email">📧 อีเมล (สำคัญ!):</label>
-        <input type="email" id="customer-email" placeholder="your-email@gmail.com" required>
-        <small style="color: #666; display: block; margin-top: -10px; margin-bottom: 15px;">
-            *เราจะส่งอีเมลยืนยันการสั่งซื้อไปที่อีเมลนี้
-        </small>
+        <div class="form-group">
+            <label for="customer-email">📧 อีเมล: <span class="required-mark">*</span></label>
+            <input type="email" id="customer-email" placeholder="your-email@gmail.com" required>
+            <small class="field-hint">เราจะส่งอีเมลยืนยันการสั่งซื้อไปที่อีเมลนี้</small>
+        </div>
 
-        <label for="customer-address">🏠 ที่อยู่สำหรับจัดส่ง:</label>
-        <textarea id="customer-address" placeholder="กรอกที่อยู่สำหรับจัดส่งแบบละเอียด" rows="4" required></textarea>
+        <div class="form-group">
+            <label for="customer-address">🏠 ที่อยู่สำหรับจัดส่ง: <span class="required-mark">*</span></label>
+            <textarea id="customer-address" placeholder="กรอกที่อยู่สำหรับจัดส่งแบบละเอียด เช่น บ้านเลขที่ ซอย ถนน ตำบล/แขวง อำเภอ/เขต จังหวัด รหัสไปรษณีย์" rows="4" required></textarea>
+            <small class="field-hint">กรุณากรอกที่อยู่ให้ครบถ้วน รวมถึงรหัสไปรษณีย์</small>
+        </div>
 
-        <label for="customer-phone">📞 เบอร์โทรศัพท์:</label>
-        <input type="tel" id="customer-phone" placeholder="0812345678" required>
+        <div class="form-group">
+            <label for="customer-phone">📞 เบอร์โทรศัพท์: <span class="required-mark">*</span></label>
+            <input type="tel" id="customer-phone" placeholder="0812345678" maxlength="10" pattern="0[0-9]{9}" required>
+            <small class="field-hint">เบอร์โทร 10 หลัก เริ่มต้นด้วย 0 (ไม่ต้องใส่ขีด)</small>
+        </div>
 
         <hr style="margin: 40px 0; border: none; border-top: 2px dashed #e0e0e0;">
 
@@ -60,11 +143,11 @@
             </button>
         </div>
 
-        <h3 style="color: #d4af37; margin-top: 30px;">📸 อัปโหลดสลิปการโอนเงิน</h3>
+        <h3 style="color: #d4af37; margin-top: 30px;">📸 อัปโหลดสลิปการโอนเงิน <span class="required-mark">*</span></h3>
         <p style="color: #666; margin-bottom: 15px;">
-            💡 กรุณาถ่ายรูปหรือ Screenshot สลิปการโอนเงิน
+            💡 กรุณาถ่ายรูปหรือ Screenshot สลิปการโอนเงิน (รองรับไฟล์ JPEG, PNG, GIF, WEBP ขนาดไม่เกิน 5MB)
         </p>
-        <input type="file" id="slipUpload" accept="image/*" onchange="previewSlip()" style="margin-bottom: 15px;">
+        <input type="file" id="slipUpload" accept="image/jpeg,image/png,image/gif,image/webp" onchange="previewSlip()" style="margin-bottom: 15px;" required>
 
         <div id="slipPreviewContainer" class="hidden" style="margin-top: 20px; text-align: center;">
             <h4 style="color: #06c755; margin-bottom: 10px;">✅ สลิปของคุณ:</h4>
