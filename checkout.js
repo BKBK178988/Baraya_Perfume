@@ -5,7 +5,119 @@
 // 3. totalPrice (ราคารวม)
 // =================================================================
 
+// ========== ฟังก์ชัน Validation ==========
+
+/**
+ * ตรวจสอบรูปแบบอีเมล
+ * @param {string} email - อีเมลที่ต้องการตรวจสอบ
+ * @returns {boolean} - true ถ้าอีเมลถูกต้อง
+ */
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+/**
+ * ตรวจสอบรูปแบบเบอร์โทรศัพท์ไทย (10 หลัก เริ่มต้นด้วย 0)
+ * @param {string} phone - เบอร์โทรที่ต้องการตรวจสอบ
+ * @returns {boolean} - true ถ้าเบอร์โทรถูกต้อง
+ */
+function validatePhone(phone) {
+    const re = /^0[0-9]{9}$/;
+    return re.test(phone);
+}
+
+/**
+ * ตรวจสอบขนาดไฟล์
+ * @param {File} file - ไฟล์ที่ต้องการตรวจสอบ
+ * @param {number} maxSizeMB - ขนาดสูงสุดเป็น MB (ค่าเริ่มต้น 5MB)
+ * @returns {boolean} - true ถ้าขนาดไฟล์ไม่เกินที่กำหนด
+ */
+function validateFileSize(file, maxSizeMB = 5) {
+    return file.size <= maxSizeMB * 1024 * 1024;
+}
+
+/**
+ * ตรวจสอบว่าไฟล์เป็นรูปภาพหรือไม่
+ * @param {File} file - ไฟล์ที่ต้องการตรวจสอบ
+ * @returns {boolean} - true ถ้าเป็นไฟล์รูปภาพ
+ */
+function validateImageFile(file) {
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    return validTypes.includes(file.type);
+}
+
+/**
+ * ตรวจสอบว่า EmailJS พร้อมใช้งานหรือไม่
+ * @returns {boolean} - true ถ้า EmailJS พร้อมใช้งาน
+ */
+function isEmailJSReady() {
+    return typeof emailjs !== 'undefined' && emailjs !== null;
+}
+
+// ========== ฟังก์ชัน Loading State ==========
+
+/**
+ * แสดง/ซ่อน Loading State
+ * @param {boolean} isLoading - true เพื่อแสดง loading, false เพื่อซ่อน
+ */
+function setLoading(isLoading) {
+    const btn = document.getElementById('confirmOrderBtn');
+    if (!btn) {
+        console.warn("⚠️ ไม่พบปุ่ม confirmOrderBtn");
+        return;
+    }
+    
+    if (isLoading) {
+        btn.disabled = true;
+        btn.setAttribute('data-original-text', btn.textContent);
+        btn.textContent = '⏳ กำลังส่งข้อมูล...';
+        btn.style.opacity = '0.7';
+        btn.style.cursor = 'not-allowed';
+    } else {
+        btn.disabled = false;
+        btn.textContent = btn.getAttribute('data-original-text') || '✅ ยืนยันคำสั่งซื้อ';
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    }
+}
+
+/**
+ * แสดง Visual Feedback สำหรับ Input Field
+ * @param {HTMLElement} element - Input element
+ * @param {boolean} isValid - true ถ้าข้อมูลถูกต้อง
+ */
+function setInputFeedback(element, isValid) {
+    if (!element) return;
+    
+    if (isValid) {
+        element.classList.remove('input-error');
+        element.classList.add('input-valid');
+    } else {
+        element.classList.remove('input-valid');
+        element.classList.add('input-error');
+    }
+}
+
+/**
+ * ล้าง Visual Feedback ทั้งหมด
+ */
+function clearAllFeedback() {
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+        input.classList.remove('input-error', 'input-valid');
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function() {
+    console.log("🚀 Checkout page loaded");
+    
+    // ตรวจสอบว่า EmailJS พร้อมใช้งานหรือไม่
+    if (!isEmailJSReady()) {
+        console.warn("⚠️ EmailJS is not loaded yet. Some features may not work.");
+    } else {
+        console.log("✅ EmailJS is ready");
+    }
     
     // --- 1. ดึงข้อมูลและกรอกฟอร์มอัตโนมัติ ---
     let savedCustomer = localStorage.getItem("customerInfo"); // ⬅️ เปลี่ยนจาก 'customerData' เป็น 'customerInfo'
@@ -116,20 +228,107 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice,
 
 // ✅ ฟังก์ชันยืนยันคำสั่งซื้อ + บันทึกข้อมูลลูกค้า (ปรับปรุง)
 function confirmOrder() {
-    let name = document.getElementById("customer-name").value;
-    let email = document.getElementById("customer-email").value;
-    let address = document.getElementById("customer-address").value;
-    let phone = document.getElementById("customer-phone").value;
-    let slipFile = document.getElementById("slipUpload").files[0];
+    console.log("📝 เริ่มการยืนยันคำสั่งซื้อ...");
     
-    if (!name || !email || !address || !phone || !slipFile) {
-        alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วน และแนบสลิปการโอนเงิน!");
+    // ล้าง feedback เก่า
+    clearAllFeedback();
+    
+    // ดึงข้อมูลจากฟอร์ม
+    const nameInput = document.getElementById("customer-name");
+    const emailInput = document.getElementById("customer-email");
+    const addressInput = document.getElementById("customer-address");
+    const phoneInput = document.getElementById("customer-phone");
+    const slipInput = document.getElementById("slipUpload");
+    
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const address = addressInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const slipFile = slipInput.files[0];
+    
+    console.log("📋 ข้อมูลที่ได้รับ:", { name, email, address, phone, hasSlip: !!slipFile });
+    
+    // ========== ตรวจสอบข้อมูลทีละฟิลด์ ==========
+    
+    // ตรวจสอบชื่อ-นามสกุล
+    if (!name) {
+        setInputFeedback(nameInput, false);
+        alert("⚠️ กรุณากรอกชื่อ-นามสกุล");
+        nameInput.focus();
         return;
     }
-
-    let cart = JSON.parse(localStorage.getItem("cart")) || []; // ⬅️ ใช้ 'cart' ให้ตรงกับ script.js
+    setInputFeedback(nameInput, true);
+    
+    // ตรวจสอบอีเมล
+    if (!email) {
+        setInputFeedback(emailInput, false);
+        alert("⚠️ กรุณากรอกอีเมล");
+        emailInput.focus();
+        return;
+    }
+    if (!validateEmail(email)) {
+        setInputFeedback(emailInput, false);
+        alert("⚠️ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง\nตัวอย่าง: example@gmail.com");
+        emailInput.focus();
+        return;
+    }
+    setInputFeedback(emailInput, true);
+    
+    // ตรวจสอบที่อยู่
+    if (!address) {
+        setInputFeedback(addressInput, false);
+        alert("⚠️ กรุณากรอกที่อยู่สำหรับจัดส่ง");
+        addressInput.focus();
+        return;
+    }
+    setInputFeedback(addressInput, true);
+    
+    // ตรวจสอบเบอร์โทรศัพท์
+    if (!phone) {
+        setInputFeedback(phoneInput, false);
+        alert("⚠️ กรุณากรอกเบอร์โทรศัพท์");
+        phoneInput.focus();
+        return;
+    }
+    if (!validatePhone(phone)) {
+        setInputFeedback(phoneInput, false);
+        alert("⚠️ รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง\nกรุณากรอกเบอร์โทร 10 หลัก เริ่มต้นด้วย 0\nตัวอย่าง: 0812345678");
+        phoneInput.focus();
+        return;
+    }
+    setInputFeedback(phoneInput, true);
+    
+    // ตรวจสอบสลิปการโอนเงิน
+    if (!slipFile) {
+        alert("⚠️ กรุณาอัปโหลดสลิปการโอนเงิน");
+        slipInput.focus();
+        return;
+    }
+    
+    // ตรวจสอบว่าไฟล์เป็นรูปภาพ
+    if (!validateImageFile(slipFile)) {
+        alert("⚠️ ไฟล์สลิปต้องเป็นรูปภาพ (JPEG, PNG, GIF, WEBP เท่านั้น)");
+        return;
+    }
+    
+    // ตรวจสอบขนาดไฟล์สลิป (ไม่เกิน 5MB)
+    if (!validateFileSize(slipFile, 5)) {
+        const fileSizeMB = (slipFile.size / (1024 * 1024)).toFixed(2);
+        alert(`⚠️ ไฟล์สลิปมีขนาดใหญ่เกินไป (${fileSizeMB} MB)\nกรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 5 MB`);
+        return;
+    }
+    
+    // ตรวจสอบตะกร้าสินค้า
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
     if (cart.length === 0) {
         alert("⚠️ ตะกร้าสินค้าว่างเปล่า! กรุณาเลือกสินค้าใหม่");
+        return;
+    }
+    
+    // ตรวจสอบว่า EmailJS พร้อมใช้งาน
+    if (!isEmailJSReady()) {
+        console.error("❌ EmailJS is not available");
+        alert("⚠️ ระบบส่งอีเมลยังไม่พร้อมใช้งาน กรุณารอสักครู่แล้วลองใหม่\nหากยังไม่สำเร็จ กรุณาติดต่อทางร้านโดยตรง");
         return;
     }
 
@@ -140,27 +339,56 @@ function confirmOrder() {
         address: address,
         phone: phone
     }));
+    console.log("💾 บันทึกข้อมูลลูกค้าสำเร็จ");
 
     // สร้าง OrderDetails สำหรับ EmailJS (เป็นข้อความบรรทัดต่อบรรทัด)
     let orderDetails = cart.map(item => `📦 ${item.name} x${item.quantity} - ${item.price * item.quantity} บาท`).join("\n");
     let totalPrice = localStorage.getItem("totalPrice");
+    
+    console.log("📧 กำลังส่งข้อมูลไปยัง EmailJS...");
+    console.log("📋 Order Details:", orderDetails);
+    console.log("💰 Total Price:", totalPrice);
+    
+    // แสดง Loading State
+    setLoading(true);
 
-    sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) // ⬅️ ใช้ EmailJS
+    sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile)
     .then((result) => {
+        console.log("✅ ส่งอีเมลสำเร็จ:", result);
+        setLoading(false);
+        
         if (result === "✅ success") {
-            alert("✅ สั่งซื้อสำเร็จ! อีเมลยืนยันถูกส่งแล้ว");
+            alert("✅ สั่งซื้อสำเร็จ! อีเมลยืนยันถูกส่งแล้ว\nขอบคุณที่ใช้บริการ BARAYA PERFUME");
 
             // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
             localStorage.removeItem("cart");
             localStorage.removeItem("totalPrice");
+            console.log("🗑️ ล้างข้อมูลตะกร้าสำเร็จ");
 
             setTimeout(() => {
-                window.location.href = "index.html"; // หรือหน้าที่คุณต้องการ
+                window.location.href = "index.html";
             }, 2000);
         }
     })
     .catch(error => {
         console.error("❌ เกิดข้อผิดพลาดในการยืนยันคำสั่งซื้อ:", error);
-        alert("❌ เกิดข้อผิดพลาดในการส่งอีเมล กรุณาติดต่อทางร้านโดยตรง");
+        setLoading(false);
+        
+        // แสดง Error Message ที่ละเอียดมากขึ้น
+        let errorMessage = "❌ เกิดข้อผิดพลาดในการส่งอีเมล\n\n";
+        
+        if (error.status === 400) {
+            errorMessage += "สาเหตุ: ข้อมูลที่ส่งไม่ถูกต้อง\nกรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง";
+        } else if (error.status === 401 || error.status === 403) {
+            errorMessage += "สาเหตุ: ไม่สามารถเชื่อมต่อกับระบบอีเมลได้\nกรุณาติดต่อทางร้านโดยตรง";
+        } else if (error.status === 429) {
+            errorMessage += "สาเหตุ: ส่งคำขอมากเกินไป\nกรุณารอสักครู่แล้วลองใหม่อีกครั้ง";
+        } else if (error.text) {
+            errorMessage += `รายละเอียด: ${error.text}\nกรุณาติดต่อทางร้านโดยตรง`;
+        } else {
+            errorMessage += "กรุณาลองใหม่อีกครั้ง หรือติดต่อทางร้านโดยตรง\n\nหมายเลขโทรศัพท์: 063-939-2988";
+        }
+        
+        alert(errorMessage);
     });
 }
