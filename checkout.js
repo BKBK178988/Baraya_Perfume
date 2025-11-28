@@ -209,11 +209,47 @@ function previewSlip() {
 // ⚠️ สำคัญ! กรุณาเปลี่ยน Service ID และ Template ID ตามที่คุณสร้างใน EmailJS
 // Service ID: https://dashboard.emailjs.com/admin
 // Template ID: https://dashboard.emailjs.com/admin/templates
+const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID_HERE";
+const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID_HERE";
+
+/**
+ * ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
+ * @returns {object} - { isValid: boolean, missingConfig: string[] }
+ */
+function validateEmailJSConfig() {
+    const missingConfig = [];
+    
+    if (EMAILJS_SERVICE_ID === "YOUR_SERVICE_ID_HERE" || !EMAILJS_SERVICE_ID) {
+        missingConfig.push("Service ID");
+    }
+    if (EMAILJS_TEMPLATE_ID === "YOUR_TEMPLATE_ID_HERE" || !EMAILJS_TEMPLATE_ID) {
+        missingConfig.push("Template ID");
+    }
+    
+    return {
+        isValid: missingConfig.length === 0,
+        missingConfig: missingConfig
+    };
+}
+
 function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
     return new Promise((resolve, reject) => {
+        // ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
+        const configValidation = validateEmailJSConfig();
+        if (!configValidation.isValid) {
+            const errorMsg = `กรุณาตั้งค่า EmailJS ก่อนใช้งาน: ${configValidation.missingConfig.join(", ")}`;
+            console.error("❌ " + errorMsg);
+            reject({
+                status: 400,
+                text: errorMsg,
+                isConfigError: true
+            });
+            return;
+        }
+        
         const reader = new FileReader();
         reader.onload = function(e) {
-            emailjs.send("YOUR_SERVICE_ID_HERE", "YOUR_TEMPLATE_ID_HERE", {
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
                 customer_name: name,
                 customer_email: email,
                 customer_address: address,
@@ -380,7 +416,16 @@ function confirmOrder() {
         // แสดง Error Message ที่ละเอียดมากขึ้น
         let errorMessage = "❌ เกิดข้อผิดพลาดในการส่งอีเมล\n\n";
         
-        if (error.status === 400 && error.text && error.text.includes('template')) {
+        // ตรวจสอบว่าเป็น Configuration Error หรือไม่
+        if (error.isConfigError) {
+            errorMessage += "สาเหตุ: ยังไม่ได้ตั้งค่า EmailJS\n";
+            errorMessage += "กรุณาตั้งค่า Service ID และ Template ID ในไฟล์ checkout.js\n\n";
+            errorMessage += "วิธีแก้ไข:\n";
+            errorMessage += "1. สมัครบัญชี EmailJS ที่ https://www.emailjs.com/\n";
+            errorMessage += "2. สร้าง Email Service และ Template\n";
+            errorMessage += "3. คัดลอก Service ID, Template ID และ Public Key\n";
+            errorMessage += "4. แก้ไขค่าในไฟล์ checkout.js และ checkout-modern.html";
+        } else if (error.status === 400 && error.text && error.text.includes('template')) {
             errorMessage += "สาเหตุ: ไม่พบ Email Template\n";
             errorMessage += "กรุณาตรวจสอบ Template ID ใน EmailJS Dashboard\n";
             errorMessage += "https://dashboard.emailjs.com/admin/templates";

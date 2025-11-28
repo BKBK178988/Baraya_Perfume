@@ -73,8 +73,14 @@
     <script>
         // ⚠️ สำคัญ! กรุณาเปลี่ยน Public Key ตามที่คุณสร้างใน EmailJS
         // ดูได้ที่: https://dashboard.emailjs.com/admin/account
+        const EMAILJS_PUBLIC_KEY = "YOUR_PUBLIC_KEY_HERE";
+        
         (function(){
-            emailjs.init("YOUR_PUBLIC_KEY_HERE");
+            if (EMAILJS_PUBLIC_KEY === "YOUR_PUBLIC_KEY_HERE") {
+                console.warn("⚠️ กรุณาตั้งค่า EmailJS Public Key ในไฟล์ checkout-modern.html");
+                console.warn("ดูได้ที่: https://dashboard.emailjs.com/admin/account");
+            }
+            emailjs.init(EMAILJS_PUBLIC_KEY);
         })();
     </script>
 </head>
@@ -172,8 +178,15 @@
     <script src="auth.js"></script>
 
     <script>
-        // ... (โค้ด emailjs.init เดิม) ...
-
+        // ⚠️ สำคัญ! กรุณาเปลี่ยน Service ID และ Template ID ตามที่คุณสร้างใน EmailJS
+        // Service ID: https://dashboard.emailjs.com/admin
+        // Template ID: https://dashboard.emailjs.com/admin/templates
+        // หมายเหตุ: ฟังก์ชันนี้จะถูกแทนที่โดย checkout.js (ซึ่งจะถูกโหลดหลังจากนี้)
+        // แต่เก็บไว้เป็น fallback ในกรณีที่ checkout.js ไม่ถูกโหลด
+        
+        const EMAILJS_SERVICE_ID_INLINE = "YOUR_SERVICE_ID_HERE";
+        const EMAILJS_TEMPLATE_ID_INLINE = "YOUR_TEMPLATE_ID_HERE";
+        
         function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
             return new Promise((resolve, reject) => {
                 // ตรวจสอบว่ามีไฟล์สลิปหรือไม่
@@ -182,12 +195,22 @@
                     return;
                 }
                 
+                // ตรวจสอบว่า Configuration ถูกตั้งค่าแล้วหรือไม่
+                if (EMAILJS_SERVICE_ID_INLINE === "YOUR_SERVICE_ID_HERE" || 
+                    EMAILJS_TEMPLATE_ID_INLINE === "YOUR_TEMPLATE_ID_HERE") {
+                    const errorMsg = "กรุณาตั้งค่า Service ID และ Template ID ในไฟล์ checkout-modern.html หรือ checkout.js";
+                    console.error("❌ " + errorMsg);
+                    reject({
+                        status: 400,
+                        text: errorMsg,
+                        isConfigError: true
+                    });
+                    return;
+                }
+                
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    // ⚠️ สำคัญ! กรุณาเปลี่ยน Service ID และ Template ID ตามที่คุณสร้างใน EmailJS
-                    // Service ID: https://dashboard.emailjs.com/admin
-                    // Template ID: https://dashboard.emailjs.com/admin/templates
-                    emailjs.send("YOUR_SERVICE_ID_HERE", "YOUR_TEMPLATE_ID_HERE", {
+                    emailjs.send(EMAILJS_SERVICE_ID_INLINE, EMAILJS_TEMPLATE_ID_INLINE, {
                         customer_name: name,
                         customer_email: email,
                         customer_address: address,
