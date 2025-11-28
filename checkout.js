@@ -63,7 +63,10 @@ function isEmailJSReady() {
  */
 function setLoading(isLoading) {
     const btn = document.getElementById('confirmOrderBtn');
-    if (!btn) return;
+    if (!btn) {
+        console.warn("⚠️ ไม่พบปุ่ม confirmOrderBtn");
+        return;
+    }
     
     if (isLoading) {
         btn.disabled = true;
