@@ -1,229 +1,79 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ชำระเงิน - BARAYA PERFUME</title>
-    <link rel="stylesheet" href="styles-modern.css">
-    
-    <!-- Custom styles for form validation feedback -->
-    <style>
-        /* Input validation feedback styles */
-        .input-error {
-            border-color: #ff6b6b !important;
-            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2) !important;
-        }
-        
-        .input-valid {
-            border-color: #06c755 !important;
-            box-shadow: 0 0 0 3px rgba(6, 199, 85, 0.2) !important;
-        }
-        
-        .field-hint {
-            color: #888;
-            font-size: 0.85em;
-            margin-top: 5px;
-            display: block;
-        }
-        
-        .required-mark {
-            color: #ff6b6b;
-            font-weight: bold;
-        }
-        
-        /* Loading state for button */
-        #confirmOrderBtn:disabled {
-            background: #ccc !important;
-            cursor: not-allowed !important;
-            transform: none !important;
-        }
-        
-        /* Form section styling */
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-requirements {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 25px;
-            text-align: left;
-        }
-        
-        .form-requirements h4 {
-            color: #856404;
-            margin-bottom: 10px;
-        }
-        
-        .form-requirements ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #856404;
-        }
-        
-        .form-requirements li {
-            margin-bottom: 5px;
-        }
-    </style>
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+    // ตั้งค่า Public Key ของคุณ
+    emailjs.init("EUHurGnUrY9Q-SbaO"); 
+</script>
 
-    <!-- EmailJS -->
-    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-    <script>
-        (function(){
-            emailjs.init("EUHurGnUrY9Q-SbaO");
-        })();
-    </script>
-</head>
-<body>
-
-    <header>
-        <h1>🛒 ชำระเงิน</h1>
-        <p>กรอกข้อมูลเพื่อรับสินค้า พร้อมรับอีเมลยืนยันอัตโนมัติ</p>
-    </header>
-
-    <section class="checkout-form">
-        <h2 style="text-align: center; color: #d4af37; margin-bottom: 30px;">
-            📋 ข้อมูลสำหรับจัดส่ง
-        </h2>
-        
-        <!-- คำแนะนำการกรอกข้อมูล -->
-        <div class="form-requirements">
-            <h4>📝 ข้อมูลที่จำเป็นต้องกรอก:</h4>
-            <ul>
-                <li>ชื่อ-นามสกุล (เพื่อใช้ในการจัดส่ง)</li>
-                <li>อีเมล (สำหรับรับใบยืนยันการสั่งซื้อ)</li>
-                <li>ที่อยู่จัดส่งแบบละเอียด</li>
-                <li>เบอร์โทรศัพท์ 10 หลัก (เริ่มต้นด้วย 0)</li>
-                <li>สลิปการโอนเงิน (รูปภาพขนาดไม่เกิน 5MB)</li>
-            </ul>
-        </div>
-
-        <div class="form-group">
-            <label for="customer-name">👤 ชื่อ - นามสกุล: <span class="required-mark">*</span></label>
-            <input type="text" id="customer-name" placeholder="ชื่อ-นามสกุล" required>
-            <small class="field-hint">กรอกชื่อจริงและนามสกุลสำหรับการจัดส่ง</small>
-        </div>
-
-        <div class="form-group">
-            <label for="customer-email">📧 อีเมล: <span class="required-mark">*</span></label>
-            <input type="email" id="customer-email" placeholder="your-email@gmail.com" required>
-            <small class="field-hint">เราจะส่งอีเมลยืนยันการสั่งซื้อไปที่อีเมลนี้</small>
-        </div>
-
-        <div class="form-group">
-            <label for="customer-address">🏠 ที่อยู่สำหรับจัดส่ง: <span class="required-mark">*</span></label>
-            <textarea id="customer-address" placeholder="กรอกที่อยู่สำหรับจัดส่งแบบละเอียด เช่น บ้านเลขที่ ซอย ถนน ตำบล/แขวง อำเภอ/เขต จังหวัด รหัสไปรษณีย์" rows="4" required></textarea>
-            <small class="field-hint">กรุณากรอกที่อยู่ให้ครบถ้วน รวมถึงรหัสไปรษณีย์</small>
-        </div>
-
-        <div class="form-group">
-            <label for="customer-phone">📞 เบอร์โทรศัพท์: <span class="required-mark">*</span></label>
-            <input type="tel" id="customer-phone" placeholder="0812345678" maxlength="10" pattern="0[0-9]{9}" required>
-            <small class="field-hint">เบอร์โทร 10 หลัก เริ่มต้นด้วย 0 (ไม่ต้องใส่ขีด)</small>
-        </div>
-
-        <hr style="margin: 40px 0; border: none; border-top: 2px dashed #e0e0e0;">
-
-        <h2 style="text-align: center; color: #d4af37; margin-bottom: 20px;">
-            📄 ชำระเงินผ่าน QR Code
-        </h2>
-
-        <div style="text-align: center; background: #f9f9f9; padding: 25px; border-radius: 15px; margin-bottom: 25px;">
-            <img id="qr-code" class="qr-code" alt="QR Code พร้อมเพย์" style="border: 5px solid white; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
-            <p style="margin-top: 20px; color: #666; font-size: 16px;">
-                📌 กรุณาสแกน QR Code ด้านบนเพื่อชำระเงิน
-            </p>
-            <p id="total-display" style="font-size: 24px; color: #d4af37; font-weight: bold; margin: 15px 0;">
-                💰 ยอดชำระ: <span id="display-price">0</span> บาท
-            </p>
-            <button id="downloadQR" onclick="downloadQRCode()" style="background: linear-gradient(135deg, #4facfe, #00f2fe); padding: 12px 30px; border-radius: 25px; border: none; color: white; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);">
-                📥 ดาวน์โหลด QR Code
-            </button>
-        </div>
-
-        <h3 style="color: #d4af37; margin-top: 30px;">📸 อัปโหลดสลิปการโอนเงิน <span class="required-mark">*</span></h3>
-        <p style="color: #666; margin-bottom: 15px;">
-            💡 กรุณาถ่ายรูปหรือ Screenshot สลิปการโอนเงิน (รองรับไฟล์ JPEG, PNG, GIF, WEBP ขนาดไม่เกิน 5MB)
-        </p>
-        <input type="file" id="slipUpload" accept="image/jpeg,image/png,image/gif,image/webp" onchange="previewSlip()" style="margin-bottom: 15px;" required>
-
-        <div id="slipPreviewContainer" class="hidden" style="margin-top: 20px; text-align: center;">
-            <h4 style="color: #06c755; margin-bottom: 10px;">✅ สลิปของคุณ:</h4>
-            <img id="slipPreview" style="max-width: 100%; max-height: 400px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
-        </div>
-
-        <button id="confirmOrderBtn" style="font-size: 20px; padding: 18px;">
-            ✅ ยืนยันคำสั่งซื้อ
-        </button>
-
-        <hr style="margin: 40px 0;">
-
-        <h3 style="color: #d4af37; text-align: center; margin-bottom: 20px;">📦 รายการสินค้าของคุณ</h3>
-        <div id="order-summary" style="background: #f9f9f9; padding: 20px; border-radius: 12px;">
-            <ul id="order-items" style="list-style: none; text-align: left;"></ul>
-        </div>
-    </section>
-
-    <script src="modern-features.js"></script>
-    <script src="auth.js"></script>
-
-   <script>
-// -----------------------
-// โหลดข้อมูลตะกร้า + QR
-// -----------------------
+<script>
+// โหลดตะกร้า + QR
 document.addEventListener("DOMContentLoaded", function () {
     let cart = JSON.parse(localStorage.getItem("cart") || "[]");
     let totalPrice = localStorage.getItem("totalPrice") || 0;
 
-    // แสดงรายการสินค้า
-    let orderItems = document.getElementById("order-items");
-    orderItems.innerHTML = cart.map(item =>
-        `<li>📦 ${item.name} x${item.quantity} — ${item.price * item.quantity} บาท</li>`
-    ).join("");
+    // รายการสินค้า
+    document.getElementById("order-items").innerHTML =
+        cart.map(item =>
+            `<li>📦 ${item.name} x${item.quantity} — ${item.price * item.quantity} บาท</li>`
+        ).join("");
 
-    // แสดงราคา
+    // ราคา
     document.getElementById("display-price").innerText = totalPrice;
 
-    // QR Payment
+    // QR
     let promptpayNumber = "0639392988";
     document.getElementById("qr-code").src =
         `https://promptpay.io/${promptpayNumber}/${totalPrice}.png`;
 });
 
-// -----------------------
-// Preview Slip
-// -----------------------
+// Preview slip
 function previewSlip() {
     const file = document.getElementById('slipUpload').files[0];
     if (!file) return;
 
-    const img = document.getElementById('slipPreview');
-    img.src = URL.createObjectURL(file);
-
+    document.getElementById('slipPreview').src = URL.createObjectURL(file);
     document.getElementById('slipPreviewContainer').classList.remove('hidden');
 }
 
-// -----------------------
-// CONFIRM ORDER
-// -----------------------
-document.getElementById("confirmOrderBtn").addEventListener("click", confirmOrder);
+// ------------------------------
+// ฟังก์ชันส่งอีเมลผ่าน EmailJS
+// ------------------------------
+function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
 
-function confirmOrder() {
+            emailjs.send("your_service_id", "your_template_id", {
+                customer_name: name,
+                customer_email: email,
+                customer_address: address,
+                customer_phone: phone,
+                order_list: orderDetails,
+                order_total: totalPrice,
+                slip_image: e.target.result
+            })
+            .then(resolve)
+            .catch(reject);
+        };
+
+        reader.readAsDataURL(slipFile);
+    });
+}
+
+// ------------------------------
+// ปุ่มยืนยันคำสั่งซื้อ
+// ------------------------------
+document.getElementById("confirmOrderBtn").addEventListener("click", function () {
     let name = document.getElementById("customer-name").value.trim();
     let email = document.getElementById("customer-email").value.trim();
     let address = document.getElementById("customer-address").value.trim();
     let phone = document.getElementById("customer-phone").value.trim();
     let slipFile = document.getElementById("slipUpload").files[0];
 
-    // ตรวจสอบฟิลด์ว่าง
     if (!name || !email || !address || !phone || !slipFile) {
-        alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วน และแนบสลิปการโอนเงิน");
+        alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วน และอัปโหลดสลิปด้วย");
         return;
     }
 
-    // สรุปคำสั่งซื้อ
     let cart = JSON.parse(localStorage.getItem("cart") || "[]");
     let totalPrice = localStorage.getItem("totalPrice") || 0;
 
@@ -231,30 +81,26 @@ function confirmOrder() {
         `${item.name} x${item.quantity} = ${item.price * item.quantity} บาท`
     ).join("\n");
 
-    // Disable ปุ่ม
     let btn = document.getElementById("confirmOrderBtn");
     btn.disabled = true;
     btn.innerText = "กำลังส่งคำสั่งซื้อ...";
 
-    // ส่งเข้า EmailJS
     sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile)
         .then(() => {
-            alert("✅ ส่งคำสั่งซื้อเรียบร้อย! ระบบส่งอีเมลให้คุณแล้ว");
+            alert("✅ ส่งคำสั่งซื้อเรียบร้อยแล้ว!");
 
-            // เคลียร์ตะกร้า
             localStorage.removeItem("cart");
             localStorage.removeItem("totalPrice");
 
-            // กลับหน้าแรก
             setTimeout(() => {
                 window.location.href = "index-modern.html";
-            }, 2000);
+            }, 1500);
         })
         .catch(err => {
             console.error(err);
-            alert("❌ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+            alert("❌ ส่งข้อมูลไม่สำเร็จ ตรวจสอบ Service ID และ Template ID");
             btn.disabled = false;
             btn.innerText = "✅ ยืนยันคำสั่งซื้อ";
         });
-}
+});
 </script>
