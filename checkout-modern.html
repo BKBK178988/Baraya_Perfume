@@ -169,31 +169,92 @@
     <script src="modern-features.js"></script>
     <script src="auth.js"></script>
 
-    <script>
-    function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
-        return new Promise((resolve, reject) => {
+   <script>
+// -----------------------
+// โหลดข้อมูลตะกร้า + QR
+// -----------------------
+document.addEventListener("DOMContentLoaded", function () {
+    let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    let totalPrice = localStorage.getItem("totalPrice") || 0;
 
-            if (!slipFile) {
-                reject(new Error("Slip file is missing."));
-                return;
-            }
+    // แสดงรายการสินค้า
+    let orderItems = document.getElementById("order-items");
+    orderItems.innerHTML = cart.map(item =>
+        `<li>📦 ${item.name} x${item.quantity} — ${item.price * item.quantity} บาท</li>`
+    ).join("");
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                emailjs.send("service_sfp9xjq", "template_tcn8bod", {
-                    customer_name: name,
-                    customer_email: email,
-                    customer_address: address,
-                    customer_phone: phone,
-                    order_list: orderDetails,
-                    order_total: totalPrice,
-                    slip_image: e.target.result  // base64 ของสลิป
-                })
-                .then(() => resolve("✅ success"))
-                .catch(err => reject(err));
-            };
+    // แสดงราคา
+    document.getElementById("display-price").innerText = totalPrice;
 
-            reader.readAsDataURL(slipFile);
-        });
+    // QR Payment
+    let promptpayNumber = "0639392988";
+    document.getElementById("qr-code").src =
+        `https://promptpay.io/${promptpayNumber}/${totalPrice}.png`;
+});
+
+// -----------------------
+// Preview Slip
+// -----------------------
+function previewSlip() {
+    const file = document.getElementById('slipUpload').files[0];
+    if (!file) return;
+
+    const img = document.getElementById('slipPreview');
+    img.src = URL.createObjectURL(file);
+
+    document.getElementById('slipPreviewContainer').classList.remove('hidden');
+}
+
+// -----------------------
+// CONFIRM ORDER
+// -----------------------
+document.getElementById("confirmOrderBtn").addEventListener("click", confirmOrder);
+
+function confirmOrder() {
+    let name = document.getElementById("customer-name").value.trim();
+    let email = document.getElementById("customer-email").value.trim();
+    let address = document.getElementById("customer-address").value.trim();
+    let phone = document.getElementById("customer-phone").value.trim();
+    let slipFile = document.getElementById("slipUpload").files[0];
+
+    // ตรวจสอบฟิลด์ว่าง
+    if (!name || !email || !address || !phone || !slipFile) {
+        alert("⚠️ กรุณากรอกข้อมูลให้ครบถ้วน และแนบสลิปการโอนเงิน");
+        return;
     }
+
+    // สรุปคำสั่งซื้อ
+    let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+    let totalPrice = localStorage.getItem("totalPrice") || 0;
+
+    let orderDetails = cart.map(item =>
+        `${item.name} x${item.quantity} = ${item.price * item.quantity} บาท`
+    ).join("\n");
+
+    // Disable ปุ่ม
+    let btn = document.getElementById("confirmOrderBtn");
+    btn.disabled = true;
+    btn.innerText = "กำลังส่งคำสั่งซื้อ...";
+
+    // ส่งเข้า EmailJS
+    sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile)
+        .then(() => {
+            alert("✅ ส่งคำสั่งซื้อเรียบร้อย! ระบบส่งอีเมลให้คุณแล้ว");
+
+            // เคลียร์ตะกร้า
+            localStorage.removeItem("cart");
+            localStorage.removeItem("totalPrice");
+
+            // กลับหน้าแรก
+            setTimeout(() => {
+                window.location.href = "index-modern.html";
+            }, 2000);
+        })
+        .catch(err => {
+            console.error(err);
+            alert("❌ เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+            btn.disabled = false;
+            btn.innerText = "✅ ยืนยันคำสั่งซื้อ";
+        });
+}
 </script>
