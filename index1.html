@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BARAYA PERFUME</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>BARAYA PERFUME</h1>
+        <p>น้ำหอมแท้ หรูหรา หอมติดทน</p>
+        <button class="cart-button" onclick="toggleCart()">🛒 ตะกร้าสินค้า (<span id="cart-count">0</span>)</button>
+    </header>
+
+    <section class="products">
+        <div class="product" data-name="AQUA.M" data-price="199">
+            <img src="AQUA.M.png" alt="AQUA.M">
+            <h2>AQUA.M</h2>
+            <p>แนวสปอร์ต เท่ หรูหรา สดชื่น</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('AQUA.M', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="BOMBSHELL" data-price="199">
+            <img src="BOMSHELL.png" alt="BOMBSHELL">
+            <h2>BOMBSHELL</h2>
+            <p>หอมเซ็กซี่ ขี้เล่น ฟรุ๊ตตี้</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('BOMBSHELL', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="FIRST LOVE" data-price="199">
+            <img src="FIRST LOVE.png" alt="FIRST LOVE">
+            <h2>FIRST LOVE</h2>
+            <p>หอมหวานละมุน น่าหลงใหล</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('FIRST LOVE', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="MONG BLACK" data-price="199">
+            <img src="MONG BLACK.png" alt="MONG BLACK">
+            <h2>MONG BLACK</h2>
+            <p>หรูหรา ไฮโซ มีเสน่ห์แบบผู้ชาย</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('MONG BLACK', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="VIN VIN" data-price="199">
+            <img src="VIN VIN.png" alt="VIN VIN">
+            <h2>VIN VIN</h2>
+            <p>หอมละมุน น่ารัก สดใส น่าเอ็นดู</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('VIN VIN', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="BERRY HER" data-price="199">
+            <img src="BERRY.png" alt="BERRY HER">
+            <h2>BERRY HER</h2>
+            <p>สาวหวานแคนดี้ ละมุน ยั่วยวน</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('BERRY HER', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="READY PINK" data-price="199">
+            <img src="READY PINK.png" alt="READY PINK">
+            <h2>READY PINK</h2>
+            <p>หอมหวานหรู ผู้ดี สไตล์คุณหนู</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('READY PINK', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="BLACK.M" data-price="199">
+            <img src="BLACK M..png" alt="BLACK.M">
+            <h2>BLACK.M</h2>
+            <p>กลิ่นสุขุม อบอุ่น สะอาด หรูหรา</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('BLACK.M', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+
+        <div class="product" data-name="CRYSTAL" data-price="199">
+            <img src="CRYSTAL.png" alt="CRYSTAL">
+            <h2>CRYSTAL</h2>
+            <p>สะอาด สดชื่น อ่อนโยน</p>
+            <p>ราคา: 199 บาท</p>
+            <button class="buy-button" onclick="addToCart('CRYSTAL', 199)">เพิ่มลงตะกร้า</button>
+        </div>
+ </section>
+    
+ <!-- 🔹 ตะกร้าสินค้า -->
+    <div id="cart" class="cart hidden">
+        <h2>🛒 ตะกร้าสินค้า</h2>
+        <ul id="cart-items"></ul>
+        <p id="total-price">ราคารวม: 0 บาท</p>
+        <button id="saveOrderButton">📸 บันทึกออเดอร์เป็นรูปภาพ</button>
+        <a href="checkout.html" class="checkout-button">🛍️ ดำเนินการสั่งซื้อ</a>
+        <a id="lineOrderButton" href="#" target="_blank" class="checkout-button">📲 สั่งซื้อผ่าน LINE</a>
+    </div>
+
+<!-- เพิ่มคำแนะนำเกี่ยวกับการสั่งซื้อ -->
+<section class="order-steps">
+    <h2>🛍️ วิธีการสั่งซื้อ</h2>
+    <ol>
+        <li>เลือกสินค้าและเพิ่มลงตะกร้า</li>
+        <li>กดปุ่ม "📸 บันทึกออเดอร์เป็นรูปภาพ"</li>
+        <li>เพิ่มเพื่อนผู้ขายผ่าน <a href="https://line.me/ti/p/OJY81U61Jk" target="_blank">LINE</a></li>
+        <li>ส่งรูปภาพออเดอร์ที่บันทึกไว้ให้ผู้ขาย</li>
+        <li>รอรับข้อมูลและยืนยันคำสั่งซื้อ</li>
+    </ol>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+    document.getElementById("saveOrderButton").addEventListener("click", function() {
+        let cartItems = document.getElementById("cart-items");
+        if (cartItems.children.length === 0) {
+            alert("❌ กรุณาเพิ่มสินค้าลงตะกร้าก่อนบันทึกออเดอร์");
+            return;
+        }
+
+        let cartElement = document.getElementById("cart");
+        html2canvas(cartElement, { scale: 2 }).then(canvas => {
+            canvas.toBlob(blob => {
+                let file = new File([blob], "order.png", { type: "image/png" });
+
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    // 📲 แชร์ไฟล์ไปยังแอปต่าง ๆ บนมือถือ (LINE, Messenger ฯลฯ)
+                    navigator.share({
+                        files: [file],
+                        title: "สั่งซื้อสินค้า",
+                        text: "นี่คือรายการสินค้าที่ฉันต้องการสั่งซื้อ",
+                    }).catch(error => console.error("❌ แชร์ไม่สำเร็จ:", error));
+                } else {
+                    // 📥 ดาวน์โหลดรูปภาพบนมือถือ
+                    let link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = "order.png";
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }, "image/png");
+        });
+    });
+</script>
+ 
+    <footer>
+        <p>ติดต่อเรา: <a href="https://line.me/ti/p/OJY81U61Jk">LINE</a></p>
+        <p>&copy; 2025 BARAYA PERFUME</p>
+    </footer>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

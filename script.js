@@ -50,6 +50,11 @@ function updateCart() {
     let cartCountElement = document.getElementById("cart-count");
     let lineOrderButton = document.getElementById("lineOrderButton");
 
+    if (!cartList || !totalPriceElement || !cartCountElement) {
+        console.error("Cart elements not found");
+        return;
+    }
+
     cartList.innerHTML = "";
     let total = 0;
     let totalItems = 0;
@@ -66,17 +71,28 @@ function updateCart() {
     cartCountElement.textContent = totalItems;
     totalPriceElement.textContent = `ราคารวม: ${total} บาท`;
 
+    // Update cart count animation
+    if (window.updateCartCountAnimated) {
+        updateCartCountAnimated(totalItems);
+    }
+
     // บันทึกลง LocalStorage
     localStorage.setItem("cart", JSON.stringify(cart));
     localStorage.setItem("totalPrice", total);
 
     // อัปเดตลิงก์ LINE พร้อมรายการสินค้า
-    let message = cart.length > 0 
-        ? `สวัสดี! ฉันต้องการสั่งซื้อสินค้า:\n${cart.map(item => `${item.name} x${item.quantity} - ${item.price * item.quantity} บาท`).join("\n")}`
-        : "สวัสดี! ฉันต้องการสอบถามข้อมูลเพิ่มเติมเกี่ยวกับสินค้า";
+    if (lineOrderButton) {
+        let message = cart.length > 0 
+            ? `สวัสดีค่ะ! ฉันต้องการสั่งซื้อสินค้า BARAYA PERFUME:\n\n${cart.map(item => `🌸 ${item.name} x${item.quantity} = ${item.price * item.quantity} บาท`).join("\n")}\n\n💰 ยอดรวม: ${total} บาท`
+            : "สวัสดีค่ะ! ฉันต้องการสอบถามข้อมูลเพิ่มเติมเกี่ยวกับน้ำหอม BARAYA PERFUME";
 
-    let lineURL = `https://line.me/ti/p/~bk0704?text=${encodeURIComponent(message)}`;
-    lineOrderButton.href = lineURL;
+        // LINE ID: bk0704
+        let lineURL = `https://line.me/ti/p/~bk0704?text=${encodeURIComponent(message)}`;
+        
+        lineOrderButton.href = lineURL;
+        
+        console.log('🔵 LINE URL updated:', lineURL);
+    }
 }
 
 function toggleCart() {
@@ -85,5 +101,15 @@ function toggleCart() {
         console.error("❌ ไม่พบ <div id='cart'> ใน HTML");
         return;
     }
-    cartElement.classList.toggle("hidden");
+    
+    // ใช้ class 'show' แทน 'hidden' สำหรับ modern design
+    if (cartElement.classList.contains('show')) {
+        cartElement.classList.remove('show');
+    } else {
+        cartElement.classList.add('show');
+        // ลบ hidden class ถ้ามี (สำหรับ compatibility)
+        cartElement.classList.remove('hidden');
+    }
+    
+    console.log('Cart toggled, classes:', cartElement.className);
 }

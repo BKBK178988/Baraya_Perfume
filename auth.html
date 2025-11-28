@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>เข้าสู่ระบบ / สมัครสมาชิก - Baraya Perfume</title>
+  <link rel="stylesheet" href="styles-modern.css">
+  <style>
+    .auth-card { max-width: 480px; margin: 40px auto; padding: 24px; background:white; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.08);} 
+    .auth-card h2{color:#d4af37;margin-bottom:12px}
+    .auth-card label{display:block;text-align:left;margin:10px 0 6px;font-weight:600}
+    .auth-card input, .auth-card textarea{width:100%;padding:12px;border:1px solid #e6e6e6;border-radius:8px}
+    .button-row{display:flex;gap:10px;margin-top:14px}
+    .small{font-size:13px;color:#666;margin-top:6px}
+  </style>
+</head>
+<body>
+  <header style="background:linear-gradient(135deg,#d4af37,#f9d342);padding:20px;text-align:center;color:white;">
+    <h1>Baraya Perfume</h1>
+    <p>เข้าสู่ระบบ หรือ สมัครสมาชิก</p>
+  </header>
+
+  <main>
+    <div class="auth-card">
+      <h2>เข้าสู่ระบบ</h2>
+      <label for="login-email">อีเมล</label>
+      <input id="login-email" type="email">
+      <label for="login-password">รหัสผ่าน</label>
+      <input id="login-password" type="password">
+      <div class="button-row">
+        <button id="loginBtn" class="checkout-btn" style="flex:1">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+
+    <div class="auth-card">
+      <h2>สมัครสมาชิก</h2>
+      <label for="reg-name">ชื่อ - นามสกุล</label>
+      <input id="reg-name" type="text">
+      <label for="reg-email">อีเมล</label>
+      <input id="reg-email" type="email">
+      <label for="reg-password">รหัสผ่าน</label>
+      <input id="reg-password" type="password">
+      <label for="reg-address">ที่อยู่</label>
+      <textarea id="reg-address" rows="3"></textarea>
+      <label for="reg-phone">เบอร์โทรศัพท์</label>
+      <input id="reg-phone" type="tel">
+      <div class="button-row">
+        <button id="registerBtn" class="checkout-btn" style="flex:1;background:linear-gradient(135deg,#06c755,#05a74c)">สมัครสมาชิก</button>
+      </div>
+      <p class="small">✨ สมัครสมาชิกเพื่อบันทึกข้อมูลและสั่งซื้อได้รวดเร็วขึ้น</p>
+    </div>
+
+    <div style="text-align:center;margin-top:30px">
+      <a href="index-modern.html" style="color:#d4af37;text-decoration:none;font-weight:600">← กลับไปหน้าแรก</a>
+    </div>
+  </main>
+
+  <script src="modern-features.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      if (!email || !password) {
+        if (window.toast) toast.warning('กรุณากรอกอีเมลและรหัสผ่าน');
+        return;
+      }
+      const result = window.auth.loginUser(email, password);
+      if (result.ok) {
+        if (window.toast) toast.success('เข้าสู่ระบบสำเร็จ!');
+        setTimeout(() => window.location.href = 'index-modern.html', 1500);
+      } else {
+        if (window.toast) toast.error(result.message);
+      }
+    });
+
+    document.getElementById('registerBtn').addEventListener('click', () => {
+      const name = document.getElementById('reg-name').value;
+      const email = document.getElementById('reg-email').value;
+      const password = document.getElementById('reg-password').value;
+      const address = document.getElementById('reg-address').value;
+      const phone = document.getElementById('reg-phone').value;
+      if (!name || !email || !password) {
+        if (window.toast) toast.warning('กรุณากรอกข้อมูลให้ครบถ้วน (ชื่อ, อีเมล, รหัสผ่าน)');
+        return;
+      }
+      const result = window.auth.registerUser({name, email, password, address, phone});
+      if (result.ok) {
+        if (window.toast) toast.success('สมัครสมาชิกสำเร็จ!');
+        setTimeout(() => window.location.href = 'index-modern.html', 1500);
+      } else {
+        if (window.toast) toast.error(result.message);
+      }
+    });
+  </script>
+</body>
+</html>
