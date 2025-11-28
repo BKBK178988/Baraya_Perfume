@@ -85,37 +85,6 @@
 
     <script src="modern-features.js"></script>
     <script src="auth.js"></script>
-
-    <script>
-        // ... (โค้ด emailjs.init เดิม) ...
-
-        function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
-            return new Promise((resolve, reject) => {
-                // ตรวจสอบว่ามีไฟล์สลิปหรือไม่
-                if (!slipFile) {
-                    reject(new Error("Slip file is missing."));
-                    return;
-                }
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    emailjs.send("service_sfp9xjq","template_tcn8bod", {
-                        customer_name: name,
-                        customer_email: email,
-                        customer_address: address,
-                        customer_phone: phone,
-                        order_list: orderDetails, // ใช้รายการสรุปที่สร้างจาก checkout.js
-                        order_total: totalPrice, // ใช้ยอดรวมที่คำนวณจาก checkout.js
-                        slip_image: e.target.result // Base64 image
-                    })
-                    .then(() => resolve("✅ success"))
-                    .catch(err => reject(err));
-                };
-                reader.readAsDataURL(slipFile);
-            });
-        }
-    </script>
-
     <script src="checkout.js"></script>
 </body>
 </html>
