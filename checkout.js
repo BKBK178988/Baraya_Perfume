@@ -450,3 +450,35 @@ function confirmOrder() {
         alert(errorMessage);
     });
 }
+
+// ✅ ฟังก์ชันแสดงตัวอย่างสลิป
+function previewSlip() {
+    let slipFile = document.getElementById("slipUpload").files[0];
+    let slipPreview = document.getElementById("slipPreview");
+    let slipPreviewContainer = document.getElementById("slipPreviewContainer");
+
+    if (slipFile) {
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            slipPreview.src = e.target.result;
+            slipPreviewContainer.classList.remove("hidden");
+        };
+        reader.readAsDataURL(slipFile);
+    }
+}
+
+// ✅ ฟังก์ชันดาวน์โหลด QR Code
+function downloadQRCode() {
+    let qrImage = document.getElementById("qr-code");
+    if (qrImage && qrImage.src) {
+        let link = document.createElement("a");
+        link.href = qrImage.src;
+        link.download = "qr-payment.png";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } else {
+        alert("❌ ไม่สามารถดาวน์โหลด QR Code ได้");
+    }
+}
+
