@@ -3,7 +3,7 @@ let cart = [];
 // โหลดตะกร้าจาก LocalStorage เมื่อเปิดหน้าเว็บ
 document.addEventListener("DOMContentLoaded", function() {
     try {
-        let storedCart = localStorage.getItem("cart");
+        let storedCart = localStorage.getItem("cartItems");
         let storedTotal = localStorage.getItem("totalPrice");
 
         if (storedCart) {
@@ -77,7 +77,7 @@ function updateCart() {
     }
 
     // บันทึกลง LocalStorage
-    localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem("cartItems", JSON.stringify(cart));
     localStorage.setItem("totalPrice", total);
 
     // อัปเดตลิงก์ LINE พร้อมรายการสินค้า

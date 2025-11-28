@@ -51,7 +51,7 @@
     </div>
 
     <div style="text-align:center;margin-top:30px">
-      <a href="index-modern.html" style="color:#d4af37;text-decoration:none;font-weight:600">← กลับไปหน้าแรก</a>
+      <a href="index.html" style="color:#d4af37;text-decoration:none;font-weight:600">← กลับไปหน้าแรก</a>
     </div>
   </main>
 
@@ -68,7 +68,7 @@
       const result = window.auth.loginUser(email, password);
       if (result.ok) {
         if (window.toast) toast.success('เข้าสู่ระบบสำเร็จ!');
-        setTimeout(() => window.location.href = 'index-modern.html', 1500);
+        setTimeout(() => window.location.href = 'index.html', 1500);
       } else {
         if (window.toast) toast.error(result.message);
       }
@@ -87,7 +87,7 @@
       const result = window.auth.registerUser({name, email, password, address, phone});
       if (result.ok) {
         if (window.toast) toast.success('สมัครสมาชิกสำเร็จ!');
-        setTimeout(() => window.location.href = 'index-modern.html', 1500);
+        setTimeout(() => window.location.href = 'index.html', 1500);
       } else {
         if (window.toast) toast.error(result.message);
       }
