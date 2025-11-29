@@ -219,10 +219,10 @@ const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
 function validateEmailJSConfig() {
     const missingConfig = [];
     
-    if (EMAILJS_SERVICE_ID === "YOUR_SERVICE_ID_HERE" || !EMAILJS_SERVICE_ID) {
+    if (EMAILJS_SERVICE_ID === "service_sfp9xjq" || !EMAILJS_SERVICE_ID) {
         missingConfig.push("Service ID");
     }
-    if (EMAILJS_TEMPLATE_ID === "YOUR_TEMPLATE_ID_HERE" || !EMAILJS_TEMPLATE_ID) {
+    if (EMAILJS_TEMPLATE_ID === "template_tcn8bod" || !EMAILJS_TEMPLATE_ID) {
         missingConfig.push("Template ID");
     }
     
