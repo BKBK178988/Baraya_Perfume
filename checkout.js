@@ -209,8 +209,8 @@ function previewSlip() {
 // ⚠️ สำคัญ! กรุณาเปลี่ยน Service ID และ Template ID ตามที่คุณสร้างใน EmailJS
 // Service ID: https://dashboard.emailjs.com/admin
 // Template ID: https://dashboard.emailjs.com/admin/templates
-const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID_HERE";
-const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID_HERE";
+const EMAILJS_SERVICE_ID = "service_sfp9xjq";
+const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
 
 /**
  * ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
