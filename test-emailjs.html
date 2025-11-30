@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ทดสอบ EmailJS</title>
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+</head>
+<body>
+    <h1>ทดสอบการเชื่อมต่อ EmailJS</h1>
+    <button onclick="testEmailJS()">ทดสอบเลย</button>
+    <pre id="result"></pre>
+    
+    <script>
+        emailjs.init("EUHurGnUrY9Q-SbaO");
+        
+        function testEmailJS() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = "กำลังทดสอบ...\n";
+            
+            // ทดสอบส่งอีเมลธรรมดา
+            emailjs.send("service_sfp9xjq", "template_tcn8bod", {
+                customer_name: "ทดสอบ",
+                customer_email: "test@example.com",
+                customer_address: "ที่อยู่ทดสอบ",
+                customer_phone: "0812345678",
+                order_list: "สินค้าทดสอบ x1",
+                order_total: "100",
+                slip_image: ""
+            })
+            .then((result) => {
+                resultDiv.textContent += "✅ สำเร็จ!\n";
+                resultDiv.textContent += JSON.stringify(result, null, 2);
+            })
+            .catch((error) => {
+                resultDiv.textContent += "❌ ล้มเหลว!\n";
+                resultDiv.textContent += JSON.stringify(error, null, 2);
+            });
+        }
+    </script>
+</body>
+</html>

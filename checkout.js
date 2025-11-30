@@ -117,6 +117,9 @@ document.addEventListener("DOMContentLoaded", function() {
         console.warn("⚠️ EmailJS is not loaded yet. Some features may not work.");
     } else {
         console.log("✅ EmailJS is ready");
+        // แสดง EmailJS User ID เพื่อการ Debug (ใช้ internal property _userID)
+        // หมายเหตุ: _userID เป็น internal property ที่อาจเปลี่ยนในอนาคต แต่มีประโยชน์สำหรับ debugging
+        console.log("📧 EmailJS User ID:", emailjs && emailjs._userID);
     }
     
     // --- 1. ดึงข้อมูลและกรอกฟอร์มอัตโนมัติ ---
@@ -247,8 +250,28 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice,
             return;
         }
         
+        console.log("📤 Sending email with:", {
+            service: EMAILJS_SERVICE_ID,
+            template: EMAILJS_TEMPLATE_ID,
+            customerEmail: email
+        });
+        
         const reader = new FileReader();
         reader.onload = function(e) {
+            const base64Size = e.target.result.length;
+            // Base64 encoding increases file size by ~33% (4/3 ratio)
+            // Multiply by 0.75 (3/4) to estimate original file size from Base64 length
+            const estimatedMB = (base64Size * 0.75) / (1024 * 1024);
+            console.log(`📊 Base64 image size: ${estimatedMB.toFixed(2)} MB`);
+
+            if (estimatedMB > 10) {
+                reject({
+                    status: 413,
+                    text: "ไฟล์สลิปมีขนาดใหญ่เกินไป (หลังแปลงเป็น Base64)\nกรุณาลดขนาดรูปภาพก่อนอัปโหลด"
+                });
+                return;
+            }
+            
             emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
                 customer_name: name,
                 customer_email: email,
@@ -367,7 +390,7 @@ function confirmOrder() {
     // ตรวจสอบว่า EmailJS พร้อมใช้งาน
     if (!isEmailJSReady()) {
         console.error("❌ EmailJS is not available");
-        alert("⚠️ ระบบส่งอีเมลยังไม่พร้อมใช้งาน กรุณารอสักครู่แล้วลองใหม่\nหากยังไม่สำเร็จ กรุณาติดต่อทางร้านโดยตรง");
+        alert("⚠️ ระบบส่งอีเมลยังไม่พร้อมใช้งาน กรุณารอสักครู่แล้วลองใหม่\nหากปัญหายังคงอยู่ กรุณาติดต่อทางร้าน");
         return;
     }
 
@@ -397,7 +420,7 @@ function confirmOrder() {
         setLoading(false);
         
         if (result === "✅ success") {
-            alert("✅ สั่งซื้อสำเร็จ! อีเมลยืนยันถูกส่งแล้ว\nขอบคุณที่ใช้บริการ BARAYA PERFUME");
+            alert("✅ สั่งซื้อสำเร็จ! อีเมลยืนยันถูกส่งแล้ว\nขอบคุณที่ใช้บริการ BARAYA PERFUME\n\nเราจะติดต่อกลับเร็วๆ นี้");
 
             // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
             localStorage.removeItem("cart");
@@ -440,14 +463,31 @@ function confirmOrder() {
             errorMessage += "กรุณาตรวจสอบ Public Key ใน EmailJS\n";
             errorMessage += "https://dashboard.emailjs.com/admin/account";
         } else if (error.status === 429) {
-            errorMessage += "สาเหตุ: ส่งคำขอมากเกินไป\nกรุณารอสักครู่แล้วลองใหม่อีกครั้ง";
+            errorMessage += "สาเหตุ: ส่งคำขอมากเกินไป\nกรุณารอสักครู่แล้วลองใหม่อีกครั้ง (ประมาณ 1-2 นาที)";
         } else if (error.text) {
             errorMessage += `รายละเอียด: ${error.text}\nกรุณาติดต่อทางร้านโดยตรง`;
         } else {
-            errorMessage += "กรุณาลองใหม่อีกครั้ง หรือติดต่อทางร้านโดยตรง\n\nหมายเลขโทรศัพท์: 063-939-2988";
+            errorMessage += "กรุณาลองใหม่อีกครั้ง หรือติดต่อทางร้านโดยตรง\n\nหมายเลขโทร: 063-939-2988\nLine: @barayaperfume";
         }
         
         alert(errorMessage);
+        
+        // แสดงปุ่มติดต่อทางร้านหากมีข้อผิดพลาดครบ 3 ครั้ง
+        // ค่านี้เป็น threshold ที่เหมาะสมสำหรับการแจ้งเตือน fallback option
+        const MAX_ERROR_COUNT = 3;
+        let errorCount = parseInt(sessionStorage.getItem('checkoutErrorCount') || '0');
+        errorCount++;
+        sessionStorage.setItem('checkoutErrorCount', errorCount);
+
+        if (errorCount >= MAX_ERROR_COUNT) {
+            const manualBtn = document.getElementById('manualSubmitBtn');
+            if (manualBtn) {
+                manualBtn.style.display = 'block';
+                manualBtn.onclick = () => {
+                    window.open('https://line.me/R/ti/p/@barayaperfume', '_blank');
+                };
+            }
+        }
     });
 }
 
