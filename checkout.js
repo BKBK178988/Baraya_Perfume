@@ -18,6 +18,10 @@
 // =================================================================
 const EMAILJS_SERVICE_ID = "service_sfp9xjq";
 const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
+
+// Demo IDs for validation comparison
+const DEMO_SERVICE_ID = "service_sfp9xjq";
+const DEMO_TEMPLATE_ID = "template_tcn8bod";
 // =================================================================
 
 // ========== ฟังก์ชัน Validation ==========
@@ -176,8 +180,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // --- 4. ผูกปุ่มยืนยันคำสั่งซื้อ ---
     const confirmBtn = document.getElementById('confirmOrderBtn');
     if (confirmBtn) {
-        // Remove inline onclick to avoid double-firing
-        confirmBtn.removeAttribute('onclick');
+        // Use addEventListener for better control and avoid duplicate handlers
         confirmBtn.addEventListener('click', confirmOrder);
     } else {
         console.error("❌ ไม่พบปุ่มยืนยันคำสั่งซื้อ (ID: confirmOrderBtn)");
@@ -239,10 +242,10 @@ function validateEmailJSConfig() {
     const warnings = [];
     
     // Check if IDs are still using default demo values
-    if (EMAILJS_SERVICE_ID === "service_sfp9xjq") {
+    if (EMAILJS_SERVICE_ID === DEMO_SERVICE_ID) {
         warnings.push("Service ID ยังเป็นค่าเริ่มต้น กรุณาอัปเดตเป็นของคุณเอง");
     }
-    if (EMAILJS_TEMPLATE_ID === "template_tcn8bod") {
+    if (EMAILJS_TEMPLATE_ID === DEMO_TEMPLATE_ID) {
         warnings.push("Template ID ยังเป็นค่าเริ่มต้น กรุณาอัปเดตเป็นของคุณเอง");
     }
     
