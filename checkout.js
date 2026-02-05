@@ -267,10 +267,16 @@ function validateEmailJSConfig() {
 /**
  * บีบอัดและลดขนาดรูปภาพให้พอดีกับข้อจำกัดของ EmailJS (50KB)
  * @param {File} file - ไฟล์รูปภาพที่ต้องการบีบอัด
- * @param {number} maxSizeKB - ขนาดสูงสุดเป็น KB (ค่าเริ่ต้น 45KB เพื่อความปลอดภัย)
+ * @param {number} maxSizeKB - ขนาดสูงสุดเป็น KB (ค่าเริ่มต้น 45KB เพื่อความปลอดภัย)
  * @returns {Promise<string>} - Base64 string ของรูปภาพที่บีบอัดแล้ว
  */
 function compressImageForEmail(file, maxSizeKB = 45) {
+    // Constants for compression strategy
+    const MAX_DIMENSION = 800; // ขนาดสูงสุดด้านใดด้านหนึ่ง
+    const INITIAL_QUALITY = 0.7; // เริ่มที่ quality 70%
+    const MIN_QUALITY = 0.1; // quality ต่ำสุด
+    const QUALITY_STEP = 0.1; // ลด quality ทีละ 10%
+    
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         
@@ -286,14 +292,13 @@ function compressImageForEmail(file, maxSizeKB = 45) {
                 let height = img.height;
                 
                 // ถ้ารูปใหญ่เกินไป ลดขนาดลงก่อน
-                const maxDimension = 800; // ขนาดสูงสุดด้านใดด้านหนึ่ง
-                if (width > maxDimension || height > maxDimension) {
+                if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
                     if (width > height) {
-                        height = (height / width) * maxDimension;
-                        width = maxDimension;
+                        height = (height / width) * MAX_DIMENSION;
+                        width = MAX_DIMENSION;
                     } else {
-                        width = (width / height) * maxDimension;
-                        height = maxDimension;
+                        width = (width / height) * MAX_DIMENSION;
+                        height = MAX_DIMENSION;
                     }
                 }
                 
@@ -302,11 +307,11 @@ function compressImageForEmail(file, maxSizeKB = 45) {
                 ctx.drawImage(img, 0, 0, width, height);
                 
                 // ลดคุณภาพจนกว่าจะได้ขนาดที่ต้องการ (ใช้ loop แทน recursion เพื่อหลีกเลี่ยง stack overflow)
-                let quality = 0.7; // เริ่มที่ quality 70%
+                let quality = INITIAL_QUALITY;
                 let base64 = '';
                 let sizeKB = 0;
                 
-                while (quality > 0.1) {
+                while (quality > MIN_QUALITY) {
                     base64 = canvas.toDataURL('image/jpeg', quality);
                     // Extract base64 data without the data URL prefix (data:image/jpeg;base64,)
                     const base64Data = base64.split(',')[1];
@@ -323,7 +328,7 @@ function compressImageForEmail(file, maxSizeKB = 45) {
                     }
                     
                     // ยังใหญ่เกินไป ลด quality ลงอีก
-                    quality -= 0.1;
+                    quality -= QUALITY_STEP;
                 }
                 
                 // ถ้าลด quality จนต่ำสุดแล้วยังใหญ่เกินไป ใช้ค่าที่ได้
