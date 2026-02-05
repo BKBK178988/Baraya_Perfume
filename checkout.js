@@ -267,7 +267,7 @@ function validateEmailJSConfig() {
 /**
  * บีบอัดและลดขนาดรูปภาพให้พอดีกับข้อจำกัดของ EmailJS (50KB)
  * @param {File} file - ไฟล์รูปภาพที่ต้องการบีบอัด
- * @param {number} maxSizeKB - ขนาดสูงสุดเป็น KB (ค่าเริ่มต้น 45KB เพื่อความปลอดภัย)
+ * @param {number} maxSizeKB - ขนาดสูงสุดเป็น KB (ค่าเริ่ต้น 45KB เพื่อความปลอดภัย)
  * @returns {Promise<string>} - Base64 string ของรูปภาพที่บีบอัดแล้ว
  */
 function compressImageForEmail(file, maxSizeKB = 45) {
@@ -284,7 +284,6 @@ function compressImageForEmail(file, maxSizeKB = 45) {
                 // เริ่มต้นด้วยขนาดปกติ
                 let width = img.width;
                 let height = img.height;
-                let quality = 0.7; // เริ่มที่ quality 70%
                 
                 // ถ้ารูปใหญ่เกินไป ลดขนาดลงก่อน
                 const maxDimension = 800; // ขนาดสูงสุดด้านใดด้านหนึ่ง
@@ -302,24 +301,32 @@ function compressImageForEmail(file, maxSizeKB = 45) {
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // ฟังก์ชันลดคุณภาพจนกว่าจะได้ขนาดที่ต้องการ
-                function tryCompress(currentQuality) {
-                    const base64 = canvas.toDataURL('image/jpeg', currentQuality);
-                    const sizeKB = (base64.length * 0.75) / 1024; // ประมาณขนาดใน KB
+                // ลดคุณภาพจนกว่าจะได้ขนาดที่ต้องการ (ใช้ loop แทน recursion เพื่อหลีกเลี่ยง stack overflow)
+                let quality = 0.7; // เริ่มที่ quality 70%
+                let base64 = '';
+                let sizeKB = 0;
+                
+                while (quality > 0.1) {
+                    base64 = canvas.toDataURL('image/jpeg', quality);
+                    // Base64 encoding has a precise 4/3 ratio - multiply by 0.75 (3/4) to get decoded size
+                    sizeKB = (base64.length * 0.75) / 1024;
                     
-                    console.log(`🔄 กำลังบีบอัด: quality=${currentQuality.toFixed(2)}, size=${sizeKB.toFixed(2)}KB`);
+                    console.log(`🔄 กำลังบีบอัด: quality=${quality.toFixed(2)}, size=${sizeKB.toFixed(2)}KB`);
                     
-                    if (sizeKB <= maxSizeKB || currentQuality <= 0.1) {
-                        // ได้ขนาดที่ต้องการแล้ว หรือ quality ต่ำสุดแล้ว
+                    if (sizeKB <= maxSizeKB) {
+                        // ได้ขนาดที่ต้องการแล้ว
                         console.log(`✅ บีบอัดสำเร็จ: ขนาดสุดท้าย ${sizeKB.toFixed(2)}KB`);
                         resolve(base64);
-                    } else {
-                        // ยังใหญ่เกินไป ลด quality ลงอีก
-                        tryCompress(currentQuality - 0.1);
+                        return;
                     }
+                    
+                    // ยังใหญ่เกินไป ลด quality ลงอีก
+                    quality -= 0.1;
                 }
                 
-                tryCompress(quality);
+                // ถ้าลด quality จนต่ำสุดแล้วยังใหญ่เกินไป ใช้ค่าที่ได้
+                console.log(`⚠️ บีบอัดที่ quality ต่ำสุดแล้ว: ขนาดสุดท้าย ${sizeKB.toFixed(2)}KB`);
+                resolve(base64);
             };
             
             img.onerror = function() {
@@ -337,63 +344,60 @@ function compressImageForEmail(file, maxSizeKB = 45) {
     });
 }
 
-function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
-    return new Promise(async (resolve, reject) => {
-        // ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
-        const configValidation = validateEmailJSConfig();
+async function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
+    // ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
+    const configValidation = validateEmailJSConfig();
+    
+    // ถ้าขาดข้อมูลที่จำเป็น ให้แจ้ง error
+    if (!configValidation.isValid) {
+        const errorMsg = `กรุณาตั้งค่า EmailJS ก่อนใช้งาน: ${configValidation.missingConfig.join(", ")}`;
+        console.error("❌ " + errorMsg);
+        throw {
+            status: 400,
+            text: errorMsg,
+            isConfigError: true
+        };
+    }
+    
+    // ถ้ามี warnings แต่ยังใช้งานได้ ให้แสดงใน console
+    if (configValidation.warnings.length > 0) {
+        console.warn("⚠️ EmailJS Configuration Warnings:");
+        configValidation.warnings.forEach(w => console.warn("  - " + w));
+    }
+    
+    console.log("📤 Sending email with:", {
+        service: EMAILJS_SERVICE_ID,
+        template: EMAILJS_TEMPLATE_ID,
+        customerEmail: email
+    });
+    
+    try {
+        // บีบอัดรูปภาพให้เหลือไม่เกิน 45KB (เพื่อให้พอดีกับข้อจำกัด 50KB ของ EmailJS)
+        console.log("🔄 กำลังบีบอัดรูปภาพ...");
+        const compressedBase64 = await compressImageForEmail(slipFile, 45);
+        const sizeKB = (compressedBase64.length * 0.75) / 1024;
+        console.log(`📊 ขนาดรูปภาพหลังบีบอัด: ${sizeKB.toFixed(2)} KB`);
         
-        // ถ้าขาดข้อมูลที่จำเป็น ให้แจ้ง error
-        if (!configValidation.isValid) {
-            const errorMsg = `กรุณาตั้งค่า EmailJS ก่อนใช้งาน: ${configValidation.missingConfig.join(", ")}`;
-            console.error("❌ " + errorMsg);
-            reject({
-                status: 400,
-                text: errorMsg,
-                isConfigError: true
-            });
-            return;
-        }
-        
-        // ถ้ามี warnings แต่ยังใช้งานได้ ให้แสดงใน console
-        if (configValidation.warnings.length > 0) {
-            console.warn("⚠️ EmailJS Configuration Warnings:");
-            configValidation.warnings.forEach(w => console.warn("  - " + w));
-        }
-        
-        console.log("📤 Sending email with:", {
-            service: EMAILJS_SERVICE_ID,
-            template: EMAILJS_TEMPLATE_ID,
-            customerEmail: email
+        // ส่งอีเมลด้วยรูปภาพที่บีบอัดแล้ว
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+            customer_name: name,
+            customer_email: email,
+            customer_address: address,
+            customer_phone: phone,
+            order_list: orderDetails,
+            order_total: totalPrice,
+            slip_image: compressedBase64
         });
         
-        try {
-            // บีบอัดรูปภาพให้เหลือไม่เกิน 45KB (เพื่อให้พอดีกับข้อจำกัด 50KB ของ EmailJS)
-            console.log("🔄 กำลังบีบอัดรูปภาพ...");
-            const compressedBase64 = await compressImageForEmail(slipFile, 45);
-            const sizeKB = (compressedBase64.length * 0.75) / 1024;
-            console.log(`📊 ขนาดรูปภาพหลังบีบอัด: ${sizeKB.toFixed(2)} KB`);
-            
-            // ส่งอีเมลด้วยรูปภาพที่บีบอัดแล้ว
-            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-                customer_name: name,
-                customer_email: email,
-                customer_address: address,
-                customer_phone: phone,
-                order_list: orderDetails,
-                order_total: totalPrice,
-                slip_image: compressedBase64
-            })
-            .then(() => resolve("✅ success"))
-            .catch(err => reject(err));
-            
-        } catch (error) {
-            console.error("❌ เกิดข้อผิดพลาดในการบีบอัดรูปภาพ:", error);
-            reject({
-                status: 500,
-                text: "ไม่สามารถประมวลผลรูปภาพได้\n" + error.message
-            });
-        }
-    });
+        return "✅ success";
+        
+    } catch (error) {
+        console.error("❌ เกิดข้อผิดพลาดในการบีบอัดหรือส่งอีเมล:", error);
+        throw {
+            status: error.status || 500,
+            text: error.message || "ไม่สามารถประมวลผลรูปภาพหรือส่งอีเมลได้"
+        };
+    }
 }
 
 // ✅ ฟังก์ชันยืนยันคำสั่งซื้อ + บันทึกข้อมูลลูกค้า (ปรับปรุง)
@@ -568,10 +572,6 @@ function confirmOrder() {
             errorMessage += "สาเหตุ: ไม่พบ Email Service\n";
             errorMessage += "กรุณาตรวจสอบ Service ID ใน EmailJS Dashboard\n";
             errorMessage += "https://dashboard.emailjs.com/admin";
-        } else if (error.status === 400 && error.text && error.text.includes('Variables size limit')) {
-            errorMessage += "สาเหตุ: ขนาดข้อมูลเกินขอบเขตที่กำหนด (50KB)\n";
-            errorMessage += "รูปภาพสลิปอาจมีขนาดใหญ่เกินไป\n\n";
-            errorMessage += "แนะนำ: กรุณาลองใช้รูปภาพที่มีขนาดเล็กกว่า หรือติดต่อทางร้านโดยตรง";
         } else if (error.status === 400) {
             errorMessage += "สาเหตุ: ข้อมูลที่ส่งไม่ถูกต้อง\nกรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง";
         } else if (error.status === 401 || error.status === 403) {
