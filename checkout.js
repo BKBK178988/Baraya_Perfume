@@ -308,8 +308,10 @@ function compressImageForEmail(file, maxSizeKB = 45) {
                 
                 while (quality > 0.1) {
                     base64 = canvas.toDataURL('image/jpeg', quality);
-                    // Base64 encoding has a precise 4/3 ratio - multiply by 0.75 (3/4) to get decoded size
-                    sizeKB = (base64.length * 0.75) / 1024;
+                    // Extract base64 data without the data URL prefix (data:image/jpeg;base64,)
+                    const base64Data = base64.split(',')[1];
+                    // Base64 uses 4 characters to represent 3 bytes, so multiply by 0.75 to get binary size
+                    sizeKB = (base64Data.length * 0.75) / 1024;
                     
                     console.log(`🔄 กำลังบีบอัด: quality=${quality.toFixed(2)}, size=${sizeKB.toFixed(2)}KB`);
                     
@@ -375,7 +377,9 @@ async function sendOrderToEmail(name, email, address, phone, orderDetails, total
         // บีบอัดรูปภาพให้เหลือไม่เกิน 45KB (เพื่อให้พอดีกับข้อจำกัด 50KB ของ EmailJS)
         console.log("🔄 กำลังบีบอัดรูปภาพ...");
         const compressedBase64 = await compressImageForEmail(slipFile, 45);
-        const sizeKB = (compressedBase64.length * 0.75) / 1024;
+        // Extract base64 data without the data URL prefix for accurate size calculation
+        const base64Data = compressedBase64.split(',')[1];
+        const sizeKB = (base64Data.length * 0.75) / 1024;
         console.log(`📊 ขนาดรูปภาพหลังบีบอัด: ${sizeKB.toFixed(2)} KB`);
         
         // ส่งอีเมลด้วยรูปภาพที่บีบอัดแล้ว

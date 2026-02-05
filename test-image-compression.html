@@ -171,7 +171,9 @@
                 
                 // Calculate sizes
                 const originalSizeKB = (selectedFile.size / 1024).toFixed(2);
-                const compressedSizeKB = ((compressedBase64.length * 0.75) / 1024).toFixed(2);
+                // Extract base64 data without the data URL prefix for accurate size calculation
+                const base64Data = compressedBase64.split(',')[1];
+                const compressedSizeKB = ((base64Data.length * 0.75) / 1024).toFixed(2);
                 const compressionRatio = ((1 - (compressedSizeKB / originalSizeKB)) * 100).toFixed(1);
                 
                 console.log('✅ บีบอัดสำเร็จ');
