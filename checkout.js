@@ -5,6 +5,25 @@
 // 3. totalPrice (ราคารวม)
 // =================================================================
 
+// =================================================================
+// 📧 EmailJS Configuration - ตั้งค่าก่อนใช้งาน
+// =================================================================
+// 1. สมัครบัญชีที่ https://www.emailjs.com/
+// 2. สร้าง Email Service และ Template
+// 3. ใส่ Service ID และ Template ID ด้านล่าง
+// 4. ใส่ Public Key ใน checkout-modern.html
+// 
+// 💡 หากยังไม่ได้ตั้งค่า ระบบจะแสดงคำเตือนแต่ยังทำงานได้
+// 📖 ดูคู่มือเต็มรูปแบบที่ EMAIL_SETUP_GUIDE.md
+// =================================================================
+const EMAILJS_SERVICE_ID = "service_sfp9xjq";
+const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
+
+// Demo IDs for validation comparison
+const DEMO_SERVICE_ID = "service_sfp9xjq";
+const DEMO_TEMPLATE_ID = "template_tcn8bod";
+// =================================================================
+
 // ========== ฟังก์ชัน Validation ==========
 
 /**
@@ -159,7 +178,13 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // --- 4. ผูกปุ่มยืนยันคำสั่งซื้อ ---
-    document.getElementById('confirmOrderBtn').addEventListener('click', confirmOrder);
+    const confirmBtn = document.getElementById('confirmOrderBtn');
+    if (confirmBtn) {
+        // Use addEventListener for better control and avoid duplicate handlers
+        confirmBtn.addEventListener('click', confirmOrder);
+    } else {
+        console.error("❌ ไม่พบปุ่มยืนยันคำสั่งซื้อ (ID: confirmOrderBtn)");
+    }
     
     // --- 5. แสดงตัวอย่างสลิป (เริ่มต้น) ---
     const slipPreviewContainer = document.getElementById('slipPreviewContainer');
@@ -208,30 +233,34 @@ function previewSlip() {
     if (container) container.classList.remove('hidden');
 }
 
-// ✅ ฟังก์ชันส่งข้อมูลไปยังอีเมล (เปลี่ยนกลับไปใช้ EmailJS ตามที่อยู่ใน HTML เดิม)
-// ⚠️ สำคัญ! กรุณาเปลี่ยน Service ID และ Template ID ตามที่คุณสร้างใน EmailJS
-// Service ID: https://dashboard.emailjs.com/admin
-// Template ID: https://dashboard.emailjs.com/admin/templates
-const EMAILJS_SERVICE_ID = "service_sfp9xjq";
-const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
-
 /**
  * ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
- * @returns {object} - { isValid: boolean, missingConfig: string[] }
+ * @returns {object} - { isValid: boolean, missingConfig: string[], warning: string[] }
  */
 function validateEmailJSConfig() {
     const missingConfig = [];
+    const warnings = [];
     
-    if (EMAILJS_SERVICE_ID === "service_sfp9xjq" || !EMAILJS_SERVICE_ID) {
+    // Check if IDs are still using default demo values
+    if (EMAILJS_SERVICE_ID === DEMO_SERVICE_ID) {
+        warnings.push("Service ID ยังเป็นค่าเริ่มต้น กรุณาอัปเดตเป็นของคุณเอง");
+    }
+    if (EMAILJS_TEMPLATE_ID === DEMO_TEMPLATE_ID) {
+        warnings.push("Template ID ยังเป็นค่าเริ่มต้น กรุณาอัปเดตเป็นของคุณเอง");
+    }
+    
+    // Check if IDs are empty
+    if (!EMAILJS_SERVICE_ID) {
         missingConfig.push("Service ID");
     }
-    if (EMAILJS_TEMPLATE_ID === "template_tcn8bod" || !EMAILJS_TEMPLATE_ID) {
+    if (!EMAILJS_TEMPLATE_ID) {
         missingConfig.push("Template ID");
     }
     
     return {
         isValid: missingConfig.length === 0,
-        missingConfig: missingConfig
+        missingConfig: missingConfig,
+        warnings: warnings
     };
 }
 
@@ -239,6 +268,8 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice,
     return new Promise((resolve, reject) => {
         // ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
         const configValidation = validateEmailJSConfig();
+        
+        // ถ้าขาดข้อมูลที่จำเป็น ให้แจ้ง error
         if (!configValidation.isValid) {
             const errorMsg = `กรุณาตั้งค่า EmailJS ก่อนใช้งาน: ${configValidation.missingConfig.join(", ")}`;
             console.error("❌ " + errorMsg);
@@ -248,6 +279,12 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice,
                 isConfigError: true
             });
             return;
+        }
+        
+        // ถ้ามี warnings แต่ยังใช้งานได้ ให้แสดงใน console
+        if (configValidation.warnings.length > 0) {
+            console.warn("⚠️ EmailJS Configuration Warnings:");
+            configValidation.warnings.forEach(w => console.warn("  - " + w));
         }
         
         console.log("📤 Sending email with:", {
@@ -420,7 +457,11 @@ function confirmOrder() {
         setLoading(false);
         
         if (result === "✅ success") {
-            alert("✅ สั่งซื้อสำเร็จ! อีเมลยืนยันถูกส่งแล้ว\nขอบคุณที่ใช้บริการ BARAYA PERFUME\n\nเราจะติดต่อกลับเร็วๆ นี้");
+            alert("✅ สั่งซื้อสำเร็จ!\n\n" +
+                  "📧 อีเมลยืนยันถูกส่งไปยังอีเมลของคุณแล้ว\n" +
+                  "📨 เจ้าของร้านได้รับคำสั่งซื้อและจะติดต่อกลับเร็วๆ นี้\n\n" +
+                  "ขอบคุณที่ใช้บริการ BARAYA PERFUME ❤️\n" +
+                  "กำลังพาคุณกลับสู่หน้าหลัก...");
 
             // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
             localStorage.removeItem("cart");
