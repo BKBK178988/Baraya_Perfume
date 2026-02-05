@@ -307,6 +307,13 @@ function compressImageForEmail(file, maxSizeKB = 45) {
                         let width = img.width;
                         let height = img.height;
                         
+                        // Guard against zero dimensions
+                        if (width <= 0 || height <= 0) {
+                            clearTimeout(timeout);
+                            reject(new Error('รูปภาพมีขนาดไม่ถูกต้อง'));
+                            return;
+                        }
+                        
                         // ลดขนาดตามสัดส่วน
                         if (width > maxDimension || height > maxDimension) {
                             if (width > height) {
@@ -331,7 +338,9 @@ function compressImageForEmail(file, maxSizeKB = 45) {
                         
                         while (quality >= MIN_QUALITY) {
                             const base64 = canvas.toDataURL('image/jpeg', quality);
-                            const base64Data = base64.split(',')[1] || '';
+                            // Use nullish coalescing to handle undefined from split
+                            const base64Parts = base64.split(',');
+                            const base64Data = (base64Parts.length > 1 ? base64Parts[1] : '') ?? '';
                             const sizeKB = (base64Data.length * 0.75) / 1024;
                             
                             console.log(`🔄 บีบอัด: dimension=${maxDimension}, quality=${quality.toFixed(2)}, size=${sizeKB.toFixed(2)}KB`);
@@ -451,7 +460,9 @@ async function sendOrderToEmail(name, email, address, phone, orderDetails, total
     try {
         console.log("🔄 กำลังบีบอัดรูปภาพ...");
         compressedBase64 = await compressImageForEmail(slipFile, 45);
-        const base64Data = compressedBase64.split(',')[1] || '';
+        // Use safer base64 extraction
+        const base64Parts = compressedBase64.split(',');
+        const base64Data = (base64Parts.length > 1 ? base64Parts[1] : '') ?? '';
         const sizeKB = (base64Data.length * 0.75) / 1024;
         console.log(`📊 ขนาดรูปภาพหลังบีบอัด: ${sizeKB.toFixed(2)} KB`);
     } catch (compressError) {
