@@ -159,7 +159,14 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // --- 4. ผูกปุ่มยืนยันคำสั่งซื้อ ---
-    document.getElementById('confirmOrderBtn').addEventListener('click', confirmOrder);
+    const confirmBtn = document.getElementById('confirmOrderBtn');
+    if (confirmBtn) {
+        // Remove inline onclick to avoid double-firing
+        confirmBtn.removeAttribute('onclick');
+        confirmBtn.addEventListener('click', confirmOrder);
+    } else {
+        console.error("❌ ไม่พบปุ่มยืนยันคำสั่งซื้อ (ID: confirmOrderBtn)");
+    }
     
     // --- 5. แสดงตัวอย่างสลิป (เริ่มต้น) ---
     const slipPreviewContainer = document.getElementById('slipPreviewContainer');
@@ -217,21 +224,32 @@ const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
 
 /**
  * ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
- * @returns {object} - { isValid: boolean, missingConfig: string[] }
+ * @returns {object} - { isValid: boolean, missingConfig: string[], warning: string[] }
  */
 function validateEmailJSConfig() {
     const missingConfig = [];
+    const warnings = [];
     
-    if (EMAILJS_SERVICE_ID === "service_sfp9xjq" || !EMAILJS_SERVICE_ID) {
+    // Check if IDs are still using default demo values
+    if (EMAILJS_SERVICE_ID === "service_sfp9xjq") {
+        warnings.push("Service ID ยังเป็นค่าเริ่มต้น กรุณาอัปเดตเป็นของคุณเอง");
+    }
+    if (EMAILJS_TEMPLATE_ID === "template_tcn8bod") {
+        warnings.push("Template ID ยังเป็นค่าเริ่มต้น กรุณาอัปเดตเป็นของคุณเอง");
+    }
+    
+    // Check if IDs are empty
+    if (!EMAILJS_SERVICE_ID) {
         missingConfig.push("Service ID");
     }
-    if (EMAILJS_TEMPLATE_ID === "template_tcn8bod" || !EMAILJS_TEMPLATE_ID) {
+    if (!EMAILJS_TEMPLATE_ID) {
         missingConfig.push("Template ID");
     }
     
     return {
         isValid: missingConfig.length === 0,
-        missingConfig: missingConfig
+        missingConfig: missingConfig,
+        warnings: warnings
     };
 }
 
@@ -239,6 +257,8 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice,
     return new Promise((resolve, reject) => {
         // ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
         const configValidation = validateEmailJSConfig();
+        
+        // ถ้าขาดข้อมูลที่จำเป็น ให้แจ้ง error
         if (!configValidation.isValid) {
             const errorMsg = `กรุณาตั้งค่า EmailJS ก่อนใช้งาน: ${configValidation.missingConfig.join(", ")}`;
             console.error("❌ " + errorMsg);
@@ -248,6 +268,12 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice,
                 isConfigError: true
             });
             return;
+        }
+        
+        // ถ้ามี warnings แต่ยังใช้งานได้ ให้แสดงใน console
+        if (configValidation.warnings.length > 0) {
+            console.warn("⚠️ EmailJS Configuration Warnings:");
+            configValidation.warnings.forEach(w => console.warn("  - " + w));
         }
         
         console.log("📤 Sending email with:", {
