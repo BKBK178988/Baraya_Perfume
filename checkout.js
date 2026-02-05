@@ -264,8 +264,81 @@ function validateEmailJSConfig() {
     };
 }
 
-function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
+/**
+ * บีบอัดและลดขนาดรูปภาพให้พอดีกับข้อจำกัดของ EmailJS (50KB)
+ * @param {File} file - ไฟล์รูปภาพที่ต้องการบีบอัด
+ * @param {number} maxSizeKB - ขนาดสูงสุดเป็น KB (ค่าเริ่มต้น 45KB เพื่อความปลอดภัย)
+ * @returns {Promise<string>} - Base64 string ของรูปภาพที่บีบอัดแล้ว
+ */
+function compressImageForEmail(file, maxSizeKB = 45) {
     return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const img = new Image();
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // เริ่มต้นด้วยขนาดปกติ
+                let width = img.width;
+                let height = img.height;
+                let quality = 0.7; // เริ่มที่ quality 70%
+                
+                // ถ้ารูปใหญ่เกินไป ลดขนาดลงก่อน
+                const maxDimension = 800; // ขนาดสูงสุดด้านใดด้านหนึ่ง
+                if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                        height = (height / width) * maxDimension;
+                        width = maxDimension;
+                    } else {
+                        width = (width / height) * maxDimension;
+                        height = maxDimension;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // ฟังก์ชันลดคุณภาพจนกว่าจะได้ขนาดที่ต้องการ
+                function tryCompress(currentQuality) {
+                    const base64 = canvas.toDataURL('image/jpeg', currentQuality);
+                    const sizeKB = (base64.length * 0.75) / 1024; // ประมาณขนาดใน KB
+                    
+                    console.log(`🔄 กำลังบีบอัด: quality=${currentQuality.toFixed(2)}, size=${sizeKB.toFixed(2)}KB`);
+                    
+                    if (sizeKB <= maxSizeKB || currentQuality <= 0.1) {
+                        // ได้ขนาดที่ต้องการแล้ว หรือ quality ต่ำสุดแล้ว
+                        console.log(`✅ บีบอัดสำเร็จ: ขนาดสุดท้าย ${sizeKB.toFixed(2)}KB`);
+                        resolve(base64);
+                    } else {
+                        // ยังใหญ่เกินไป ลด quality ลงอีก
+                        tryCompress(currentQuality - 0.1);
+                    }
+                }
+                
+                tryCompress(quality);
+            };
+            
+            img.onerror = function() {
+                reject(new Error('ไม่สามารถโหลดรูปภาพได้'));
+            };
+            
+            img.src = e.target.result;
+        };
+        
+        reader.onerror = function() {
+            reject(new Error('ไม่สามารถอ่านไฟล์ได้'));
+        };
+        
+        reader.readAsDataURL(file);
+    });
+}
+
+function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
+    return new Promise(async (resolve, reject) => {
         // ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
         const configValidation = validateEmailJSConfig();
         
@@ -293,35 +366,33 @@ function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice,
             customerEmail: email
         });
         
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const base64Size = e.target.result.length;
-            // Base64 encoding increases file size by ~33% (4/3 ratio)
-            // Multiply by 0.75 (3/4) to estimate original file size from Base64 length
-            const estimatedMB = (base64Size * 0.75) / (1024 * 1024);
-            console.log(`📊 Base64 image size: ${estimatedMB.toFixed(2)} MB`);
-
-            if (estimatedMB > 10) {
-                reject({
-                    status: 413,
-                    text: "ไฟล์สลิปมีขนาดใหญ่เกินไป (หลังแปลงเป็น Base64)\nกรุณาลดขนาดรูปภาพก่อนอัปโหลด"
-                });
-                return;
-            }
+        try {
+            // บีบอัดรูปภาพให้เหลือไม่เกิน 45KB (เพื่อให้พอดีกับข้อจำกัด 50KB ของ EmailJS)
+            console.log("🔄 กำลังบีบอัดรูปภาพ...");
+            const compressedBase64 = await compressImageForEmail(slipFile, 45);
+            const sizeKB = (compressedBase64.length * 0.75) / 1024;
+            console.log(`📊 ขนาดรูปภาพหลังบีบอัด: ${sizeKB.toFixed(2)} KB`);
             
+            // ส่งอีเมลด้วยรูปภาพที่บีบอัดแล้ว
             emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
                 customer_name: name,
                 customer_email: email,
                 customer_address: address,
                 customer_phone: phone,
-                order_list: orderDetails, // Order details must be a string for the template
+                order_list: orderDetails,
                 order_total: totalPrice,
-                slip_image: e.target.result // Base64 image
+                slip_image: compressedBase64
             })
             .then(() => resolve("✅ success"))
             .catch(err => reject(err));
-        };
-        reader.readAsDataURL(slipFile);
+            
+        } catch (error) {
+            console.error("❌ เกิดข้อผิดพลาดในการบีบอัดรูปภาพ:", error);
+            reject({
+                status: 500,
+                text: "ไม่สามารถประมวลผลรูปภาพได้\n" + error.message
+            });
+        }
     });
 }
 
@@ -497,6 +568,10 @@ function confirmOrder() {
             errorMessage += "สาเหตุ: ไม่พบ Email Service\n";
             errorMessage += "กรุณาตรวจสอบ Service ID ใน EmailJS Dashboard\n";
             errorMessage += "https://dashboard.emailjs.com/admin";
+        } else if (error.status === 400 && error.text && error.text.includes('Variables size limit')) {
+            errorMessage += "สาเหตุ: ขนาดข้อมูลเกินขอบเขตที่กำหนด (50KB)\n";
+            errorMessage += "รูปภาพสลิปอาจมีขนาดใหญ่เกินไป\n\n";
+            errorMessage += "แนะนำ: กรุณาลองใช้รูปภาพที่มีขนาดเล็กกว่า หรือติดต่อทางร้านโดยตรง";
         } else if (error.status === 400) {
             errorMessage += "สาเหตุ: ข้อมูลที่ส่งไม่ถูกต้อง\nกรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง";
         } else if (error.status === 401 || error.status === 403) {
@@ -506,7 +581,7 @@ function confirmOrder() {
         } else if (error.status === 429) {
             errorMessage += "สาเหตุ: ส่งคำขอมากเกินไป\nกรุณารอสักครู่แล้วลองใหม่อีกครั้ง (ประมาณ 1-2 นาที)";
         } else if (error.text) {
-            errorMessage += `รายละเอียด: ${error.text}\nกรุณาติดต่อทางร้านโดยตรง`;
+            errorMessage += `รายละเอียด: ${error.text}\nแนะนำ: กรุณาลดขนาดไฟล์สลิปหรือติดต่อทางร้านโดยตรง`;
         } else {
             errorMessage += "กรุณาลองใหม่อีกครั้ง หรือติดต่อทางร้านโดยตรง\n\nหมายเลขโทร: 063-939-2988\nLine: @barayaperfume";
         }
