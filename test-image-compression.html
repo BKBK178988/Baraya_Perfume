@@ -164,7 +164,7 @@
                 const startTime = Date.now();
                 
                 // Call the compression function from checkout.js
-                const compressedBase64 = await compressImageForEmail(selectedFile, 45);
+                const compressedBase64 = await compressImageForEmail(selectedFile, 500);
                 
                 const endTime = Date.now();
                 const compressionTime = ((endTime - startTime) / 1000).toFixed(2);
@@ -186,7 +186,7 @@
                 compressedPreview.style.display = 'block';
                 
                 // Check if size is within limit
-                const isWithinLimit = compressedSizeKB <= 45;
+                const isWithinLimit = compressedSizeKB <= 500;
                 const resultClass = isWithinLimit ? 'success' : 'error';
                 
                 resultsDiv.innerHTML += `
@@ -197,8 +197,8 @@
                         📉 ลดลง: ${compressionRatio}%<br>
                         ⏱️ ใช้เวลา: ${compressionTime} วินาที<br>
                         ${isWithinLimit ? 
-                            '✅ ผ่าน! อยู่ภายในขีดจำกัด 45KB' : 
-                            '❌ ยังเกิน 45KB - ต้องปรับปรุงเพิ่มเติม'
+                            '✅ ผ่าน! อยู่ภายในขีดจำกัด 500KB' : 
+                            '❌ ยังเกิน 500KB - ต้องปรับปรุงเพิ่มเติม'
                         }
                     </div>
                 `;

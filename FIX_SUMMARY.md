@@ -1,33 +1,32 @@
-# Fix for EmailJS 50KB Variables Size Limit
+# Fix for Email Attachment Size Limit
 
 ## Problem Statement
 The BARAYA PERFUME website was experiencing an error when customers tried to submit orders with payment slips:
 
-> **Error:** "Variables size limit. The maximum allowed variables size is 50Kb"
+> **Error:** "ไม่สามารถส่งอีเมลได้" (Cannot send email)
 
-This error occurred because EmailJS has a strict 50KB limit on the total size of all variables sent in an email, and base64-encoded payment slip images were exceeding this limit.
+Customers were unable to send payment slip images that were larger than the previous 45KB limit.
 
 ## Root Cause
-- Payment slip images were being converted to base64 format for email transmission
-- Base64 encoding increases file size by approximately 33% (4:3 ratio)
-- Even moderately sized images (200-300KB) would exceed the 50KB limit when base64-encoded
-- The error message was appearing in Thai: "รายละเอียด: Variables size limit. The maximum allowed variables size is 50Kb กรุณาติดต่อทางร้านโดยตรง"
+- Payment slip images were being compressed to only 45KB which was too restrictive
+- This resulted in either very low quality images or email sending failures
+- Users requested increasing the limit to support larger file sizes (up to 500KB)
 
 ## Solution Implemented
 
 ### 1. Image Compression Function (`compressImageForEmail`)
-Created a new function that automatically compresses payment slip images before sending them via EmailJS:
+Updated the function to support larger payment slip images:
 
 **Features:**
-- **Dimension Reduction**: Resizes images to a maximum of 800px on the longest side
-- **Quality Optimization**: Starts at 70% JPEG quality and progressively reduces by 10% increments
-- **Size Target**: Compresses images to under 45KB (leaving a 5KB safety margin)
+- **Dimension Reduction**: Resizes images progressively from 1200px to 400px on the longest side
+- **Quality Optimization**: Starts at 80% JPEG quality and progressively reduces by 10% increments
+- **Size Target**: Compresses images to under 500KB (increased from 45KB)
 - **Iterative Approach**: Uses a while loop (not recursion) to avoid stack overflow
 - **Accurate Size Calculation**: Excludes data URL prefix for precise size measurement
 
 **Constants Used:**
-- `MAX_DIMENSION = 800` - Maximum pixel dimension
-- `INITIAL_QUALITY = 0.7` - Starting compression quality (70%)
+- `DIMENSION_STEPS = [1200, 1000, 800, 600, 400]` - Progressive dimension reduction steps
+- `INITIAL_QUALITY = 0.8` - Starting compression quality (80%)
 - `MIN_QUALITY = 0.1` - Minimum acceptable quality (10%)
 - `QUALITY_STEP = 0.1` - Quality reduction per iteration (10%)
 
@@ -115,7 +114,7 @@ The solution introduces no security vulnerabilities:
 2. Upload a payment slip image (any size)
 3. Click "Compress Image" button
 4. Verify:
-   - Image is compressed to under 45KB
+   - Image is compressed to under 500KB
    - Visual quality remains acceptable
    - Compression time is reasonable
    - Statistics are accurate
@@ -128,40 +127,39 @@ The solution introduces no security vulnerabilities:
 5. Submit order
 6. Verify:
    - Order submits successfully
-   - No "Variables size limit" error appears
    - Email is received with compressed slip image
    - Image quality in email is acceptable
 
 ## Expected Behavior
 
 ### Before Fix
-❌ Users uploading payment slips > ~50KB would see:
-- Error message about variables size limit
-- Order submission would fail
-- Users would need to manually compress images
+❌ Users uploading payment slips were limited to very small files:
+- Images were compressed to only 45KB
+- Resulted in very low quality images
+- Users would see errors when sending emails with larger slips
 
 ### After Fix
-✅ Users can now upload payment slips of any reasonable size:
-- Images are automatically compressed to under 45KB
+✅ Users can now upload payment slips up to 5MB:
+- Images are automatically compressed to under 500KB
 - Order submission succeeds
 - Users see success message and receive confirmation email
-- Image quality remains acceptable for verification
+- Image quality remains good for verification
 
 ## Performance Impact
 
 - **Compression Time**: 0.5-3 seconds depending on image size
-- **User Experience**: Improved (no need for manual compression)
+- **User Experience**: Improved (better image quality, larger file support)
 - **Server Load**: No change (compression happens client-side)
 - **Success Rate**: Expected to increase significantly
 
 ## Maintenance Notes
 
 To adjust compression settings if needed:
-- Change `MAX_DIMENSION` to increase/decrease final image resolution
+- Change `DIMENSION_STEPS` array to adjust progressive dimension reduction
 - Change `INITIAL_QUALITY` to start with different quality level
 - Change `MIN_QUALITY` to set lower quality bound
 - Change `QUALITY_STEP` to adjust compression granularity
-- Change `maxSizeKB` parameter to target different file sizes
+- Change `maxSizeKB` parameter to target different file sizes (currently 500KB)
 
 ## Rollback Plan
 
