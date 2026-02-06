@@ -271,84 +271,159 @@ function validateEmailJSConfig() {
  * @returns {Promise<string>} - Base64 string ของรูปภาพที่บีบอัดแล้ว
  */
 function compressImageForEmail(file, maxSizeKB = 45) {
-    // Constants for compression strategy
-    const MAX_DIMENSION = 800; // ขนาดสูงสุดด้านใดด้านหนึ่ง
-    const INITIAL_QUALITY = 0.7; // เริ่มที่ quality 70%
+    // Constants for compression strategy - use progressive dimension reduction
+    const DIMENSION_STEPS = [800, 600, 400, 300]; // ขนาดที่จะลองลดทีละขั้น
+    const INITIAL_QUALITY = 0.8; // เริ่มที่ quality 80%
     const MIN_QUALITY = 0.1; // quality ต่ำสุด
     const QUALITY_STEP = 0.1; // ลด quality ทีละ 10%
     
     return new Promise((resolve, reject) => {
+        // Add timeout to prevent hanging
+        const timeout = setTimeout(() => {
+            reject(new Error('การบีบอัดรูปภาพใช้เวลานานเกินไป'));
+        }, 30000); // 30 second timeout
+        
         const reader = new FileReader();
         
         reader.onload = function(e) {
             const img = new Image();
             
             img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // เริ่มต้นด้วยขนาดปกติ
-                let width = img.width;
-                let height = img.height;
-                
-                // ถ้ารูปใหญ่เกินไป ลดขนาดลงก่อน
-                if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-                    if (width > height) {
-                        height = (height / width) * MAX_DIMENSION;
-                        width = MAX_DIMENSION;
-                    } else {
-                        width = (width / height) * MAX_DIMENSION;
-                        height = MAX_DIMENSION;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                // ลดคุณภาพจนกว่าจะได้ขนาดที่ต้องการ (ใช้ loop แทน recursion เพื่อหลีกเลี่ยง stack overflow)
-                let quality = INITIAL_QUALITY;
-                let base64 = '';
-                let sizeKB = 0;
-                
-                while (quality > MIN_QUALITY) {
-                    base64 = canvas.toDataURL('image/jpeg', quality);
-                    // Extract base64 data without the data URL prefix (data:image/jpeg;base64,)
-                    const base64Data = base64.split(',')[1];
-                    // Base64 uses 4 characters to represent 3 bytes, so multiply by 0.75 to get binary size
-                    sizeKB = (base64Data.length * 0.75) / 1024;
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
                     
-                    console.log(`🔄 กำลังบีบอัด: quality=${quality.toFixed(2)}, size=${sizeKB.toFixed(2)}KB`);
-                    
-                    if (sizeKB <= maxSizeKB) {
-                        // ได้ขนาดที่ต้องการแล้ว
-                        console.log(`✅ บีบอัดสำเร็จ: ขนาดสุดท้าย ${sizeKB.toFixed(2)}KB`);
-                        resolve(base64);
+                    if (!ctx) {
+                        clearTimeout(timeout);
+                        reject(new Error('ไม่สามารถสร้าง canvas context ได้'));
                         return;
                     }
                     
-                    // ยังใหญ่เกินไป ลด quality ลงอีก
-                    quality -= QUALITY_STEP;
+                    let bestBase64 = '';
+                    let bestSizeKB = Infinity;
+                    
+                    // ลองลดขนาดรูปหลายระดับจนกว่าจะได้ขนาดที่ต้องการ
+                    for (const maxDimension of DIMENSION_STEPS) {
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Guard against zero dimensions
+                        if (width <= 0 || height <= 0) {
+                            clearTimeout(timeout);
+                            reject(new Error('รูปภาพมีขนาดไม่ถูกต้อง'));
+                            return;
+                        }
+                        
+                        // ลดขนาดตามสัดส่วน
+                        if (width > maxDimension || height > maxDimension) {
+                            if (width > height) {
+                                height = Math.round((height / width) * maxDimension);
+                                width = maxDimension;
+                            } else {
+                                width = Math.round((width / height) * maxDimension);
+                                height = maxDimension;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // Clear canvas and draw image
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // ลดคุณภาพจนกว่าจะได้ขนาดที่ต้องการ
+                        let quality = INITIAL_QUALITY;
+                        
+                        while (quality >= MIN_QUALITY) {
+                            const base64 = canvas.toDataURL('image/jpeg', quality);
+                            // Use nullish coalescing to handle undefined from split
+                            const base64Parts = base64.split(',');
+                            const base64Data = (base64Parts.length > 1 ? base64Parts[1] : '') ?? '';
+                            const sizeKB = (base64Data.length * 0.75) / 1024;
+                            
+                            console.log(`🔄 บีบอัด: dimension=${maxDimension}, quality=${quality.toFixed(2)}, size=${sizeKB.toFixed(2)}KB`);
+                            
+                            // เก็บค่าที่ดีที่สุด
+                            if (sizeKB < bestSizeKB) {
+                                bestSizeKB = sizeKB;
+                                bestBase64 = base64;
+                            }
+                            
+                            if (sizeKB <= maxSizeKB) {
+                                clearTimeout(timeout);
+                                console.log(`✅ บีบอัดสำเร็จ: ขนาดสุดท้าย ${sizeKB.toFixed(2)}KB`);
+                                resolve(base64);
+                                return;
+                            }
+                            
+                            quality -= QUALITY_STEP;
+                        }
+                    }
+                    
+                    // ถ้าลดจนสุดแล้วยังใหญ่เกินไป ใช้ค่าที่ดีที่สุดที่ได้
+                    clearTimeout(timeout);
+                    if (bestBase64) {
+                        console.log(`⚠️ บีบอัดที่ค่าต่ำสุดแล้ว: ขนาดสุดท้าย ${bestSizeKB.toFixed(2)}KB`);
+                        resolve(bestBase64);
+                    } else {
+                        reject(new Error('ไม่สามารถบีบอัดรูปภาพได้'));
+                    }
+                } catch (canvasError) {
+                    clearTimeout(timeout);
+                    console.error('Canvas error:', canvasError);
+                    reject(new Error('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ'));
                 }
-                
-                // ถ้าลด quality จนต่ำสุดแล้วยังใหญ่เกินไป ใช้ค่าที่ได้
-                console.log(`⚠️ บีบอัดที่ quality ต่ำสุดแล้ว: ขนาดสุดท้าย ${sizeKB.toFixed(2)}KB`);
-                resolve(base64);
             };
             
             img.onerror = function() {
-                reject(new Error('ไม่สามารถโหลดรูปภาพได้'));
+                clearTimeout(timeout);
+                reject(new Error('ไม่สามารถโหลดรูปภาพได้ - รูปแบบไฟล์อาจไม่รองรับ'));
             };
             
             img.src = e.target.result;
         };
         
         reader.onerror = function() {
+            clearTimeout(timeout);
             reject(new Error('ไม่สามารถอ่านไฟล์ได้'));
         };
         
         reader.readAsDataURL(file);
     });
+}
+
+/**
+ * ส่งอีเมลผ่าน EmailJS พร้อม retry logic
+ * @param {object} templateParams - พารามิเตอร์สำหรับ EmailJS template
+ * @param {number} maxRetries - จำนวนครั้งที่จะลองส่งซ้ำ
+ * @returns {Promise<void>}
+ */
+async function sendEmailWithRetry(templateParams, maxRetries = 2) {
+    let lastError = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`📤 พยายามส่งอีเมลครั้งที่ ${attempt}/${maxRetries}...`);
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+            console.log(`✅ ส่งอีเมลสำเร็จในครั้งที่ ${attempt}`);
+            return; // สำเร็จ
+        } catch (error) {
+            lastError = error;
+            console.warn(`⚠️ ส่งอีเมลครั้งที่ ${attempt} ไม่สำเร็จ:`, error);
+            
+            // รอก่อนลองใหม่ (exponential backoff)
+            if (attempt < maxRetries) {
+                const waitTime = attempt * 1000; // 1s, 2s, ...
+                console.log(`⏳ รอ ${waitTime}ms ก่อนลองใหม่...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+        }
+    }
+    
+    // ลองครบแล้วยังไม่สำเร็จ
+    throw lastError;
 }
 
 async function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
@@ -378,33 +453,78 @@ async function sendOrderToEmail(name, email, address, phone, orderDetails, total
         customerEmail: email
     });
     
+    let compressedBase64 = null;
+    let imageError = null;
+    
+    // ขั้นตอนที่ 1: พยายามบีบอัดรูปภาพ
     try {
-        // บีบอัดรูปภาพให้เหลือไม่เกิน 45KB (เพื่อให้พอดีกับข้อจำกัด 50KB ของ EmailJS)
         console.log("🔄 กำลังบีบอัดรูปภาพ...");
-        const compressedBase64 = await compressImageForEmail(slipFile, 45);
-        // Extract base64 data without the data URL prefix for accurate size calculation
-        const base64Data = compressedBase64.split(',')[1];
+        compressedBase64 = await compressImageForEmail(slipFile, 45);
+        // Use safer base64 extraction
+        const base64Parts = compressedBase64.split(',');
+        const base64Data = (base64Parts.length > 1 ? base64Parts[1] : '') ?? '';
         const sizeKB = (base64Data.length * 0.75) / 1024;
         console.log(`📊 ขนาดรูปภาพหลังบีบอัด: ${sizeKB.toFixed(2)} KB`);
-        
-        // ส่งอีเมลด้วยรูปภาพที่บีบอัดแล้ว
-        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    } catch (compressError) {
+        console.warn("⚠️ ไม่สามารถบีบอัดรูปภาพได้:", compressError.message);
+        imageError = compressError;
+    }
+    
+    // ขั้นตอนที่ 2: ลองส่งอีเมลพร้อมรูปภาพ (ถ้ามี)
+    if (compressedBase64) {
+        try {
+            await sendEmailWithRetry({
+                customer_name: name,
+                customer_email: email,
+                customer_address: address,
+                customer_phone: phone,
+                order_list: orderDetails,
+                order_total: totalPrice,
+                slip_image: compressedBase64
+            });
+            return "✅ success";
+        } catch (emailError) {
+            console.warn("⚠️ ส่งอีเมลพร้อมรูปไม่สำเร็จ ลองส่งแบบไม่มีรูป...", emailError);
+            // ลองต่อในขั้นตอนถัดไป
+        }
+    }
+    
+    // ขั้นตอนที่ 3: Fallback - ส่งอีเมลโดยไม่มีรูปภาพ
+    try {
+        console.log("📤 กำลังส่งอีเมลแบบไม่มีรูปภาพ (Fallback)...");
+        await sendEmailWithRetry({
             customer_name: name,
             customer_email: email,
             customer_address: address,
             customer_phone: phone,
             order_list: orderDetails,
             order_total: totalPrice,
-            slip_image: compressedBase64
+            slip_image: "⚠️ ไม่สามารถแนบรูปสลิปได้ กรุณาติดต่อลูกค้าเพื่อขอสลิป\nโทร: " + phone
         });
         
-        return "✅ success";
+        console.log("✅ ส่งอีเมลสำเร็จ (แบบไม่มีรูป)");
+        return "✅ success_without_image";
+    } catch (fallbackError) {
+        console.error("❌ ไม่สามารถส่งอีเมลได้:", fallbackError);
         
-    } catch (error) {
-        console.error("❌ เกิดข้อผิดพลาดในการบีบอัดหรือส่งอีเมล:", error);
+        // สร้าง error message ที่เข้าใจง่าย
+        let errorText = "ไม่สามารถส่งอีเมลได้";
+        
+        if (fallbackError.status === 429) {
+            errorText = "ส่งอีเมลมากเกินไป กรุณารอ 1-2 นาทีแล้วลองใหม่";
+        } else if (fallbackError.status === 401 || fallbackError.status === 403) {
+            errorText = "ระบบอีเมลมีปัญหาเรื่องการยืนยันตัวตน กรุณาติดต่อทางร้าน";
+        } else if (fallbackError.text && fallbackError.text.includes('template')) {
+            errorText = "ไม่พบรูปแบบอีเมล กรุณาติดต่อทางร้าน";
+        } else if (fallbackError.text && fallbackError.text.includes('service')) {
+            errorText = "ไม่พบบริการอีเมล กรุณาติดต่อทางร้าน";
+        } else if (imageError) {
+            errorText = `ไม่สามารถประมวลผลรูปภาพ (${imageError.message}) และไม่สามารถส่งอีเมลได้`;
+        }
+        
         throw {
-            status: error.status || 500,
-            text: error.message || "ไม่สามารถประมวลผลรูปภาพหรือส่งอีเมลได้"
+            status: fallbackError.status || 500,
+            text: errorText
         };
     }
 }
@@ -542,6 +662,24 @@ function confirmOrder() {
         
         if (result === "✅ success") {
             alert("✅ สั่งซื้อสำเร็จ!\n\n" +
+                  "📧 อีเมลยืนยันถูกส่งไปยังอีเมลของคุณแล้ว\n" +
+                  "📨 เจ้าของร้านได้รับคำสั่งซื้อและจะติดต่อกลับเร็วๆ นี้\n\n" +
+                  "ขอบคุณที่ใช้บริการ BARAYA PERFUME ❤️\n" +
+                  "กำลังพาคุณกลับสู่หน้าหลัก...");
+
+            // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
+            localStorage.removeItem("cart");
+            localStorage.removeItem("totalPrice");
+            console.log("🗑️ ล้างข้อมูลตะกร้าสำเร็จ");
+
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 2000);
+        } else if (result === "✅ success_without_image") {
+            // สำเร็จแต่ไม่มีรูปสลิป
+            alert("✅ สั่งซื้อสำเร็จ!\n\n" +
+                  "⚠️ หมายเหตุ: ไม่สามารถแนบรูปสลิปในอีเมลได้\n" +
+                  "📞 ทางร้านจะติดต่อกลับเพื่อขอรูปสลิปเพิ่มเติม\n\n" +
                   "📧 อีเมลยืนยันถูกส่งไปยังอีเมลของคุณแล้ว\n" +
                   "📨 เจ้าของร้านได้รับคำสั่งซื้อและจะติดต่อกลับเร็วๆ นี้\n\n" +
                   "ขอบคุณที่ใช้บริการ BARAYA PERFUME ❤️\n" +
