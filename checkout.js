@@ -162,8 +162,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // --- 2. แสดงราคารวม ---
-    if (totalPrice) {
-        document.getElementById('display-price').textContent = Number(totalPrice).toLocaleString();
+    const displayPriceElement = document.getElementById('display-price');
+    if (totalPrice && displayPriceElement) {
+        displayPriceElement.textContent = Number(totalPrice).toLocaleString();
     }
     
     // --- 3. สร้าง QR Code พร้อมเพย์ ---
