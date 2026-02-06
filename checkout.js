@@ -265,14 +265,14 @@ function validateEmailJSConfig() {
 }
 
 /**
- * บีบอัดและลดขนาดรูปภาพให้พอดีกับข้อจำกัดของ EmailJS (50KB)
+ * บีบอัดและลดขนาดรูปภาพสำหรับส่งอีเมล
  * @param {File} file - ไฟล์รูปภาพที่ต้องการบีบอัด
- * @param {number} maxSizeKB - ขนาดสูงสุดเป็น KB (ค่าเริ่มต้น 45KB เพื่อความปลอดภัย)
+ * @param {number} maxSizeKB - ขนาดสูงสุดเป็น KB (ค่าเริ่มต้น 500KB)
  * @returns {Promise<string>} - Base64 string ของรูปภาพที่บีบอัดแล้ว
  */
-function compressImageForEmail(file, maxSizeKB = 45) {
+function compressImageForEmail(file, maxSizeKB = 500) {
     // Constants for compression strategy - use progressive dimension reduction
-    const DIMENSION_STEPS = [800, 600, 400, 300]; // ขนาดที่จะลองลดทีละขั้น
+    const DIMENSION_STEPS = [1200, 1000, 800, 600, 400]; // ขนาดที่จะลองลดทีละขั้น (เพิ่มขนาดใหญ่ขึ้น)
     const INITIAL_QUALITY = 0.8; // เริ่มที่ quality 80%
     const MIN_QUALITY = 0.1; // quality ต่ำสุด
     const QUALITY_STEP = 0.1; // ลด quality ทีละ 10%
@@ -459,7 +459,7 @@ async function sendOrderToEmail(name, email, address, phone, orderDetails, total
     // ขั้นตอนที่ 1: พยายามบีบอัดรูปภาพ
     try {
         console.log("🔄 กำลังบีบอัดรูปภาพ...");
-        compressedBase64 = await compressImageForEmail(slipFile, 45);
+        compressedBase64 = await compressImageForEmail(slipFile, 500);
         // Use safer base64 extraction
         const base64Parts = compressedBase64.split(',');
         const base64Data = (base64Parts.length > 1 ? base64Parts[1] : '') ?? '';
