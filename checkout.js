@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("customer-phone").value = c.phone || "";
     }
 
-    let cartData = localStorage.getItem("cart"); // ⬅️ ใช้ 'cart' ให้ตรงกับ script.js
+    let cartData = localStorage.getItem("cartItems"); // ⬅️ ใช้ 'cartItems' ให้ตรงกับ script.js
     let totalPrice = localStorage.getItem("totalPrice");
     let cart = cartData ? JSON.parse(cartData) : [];
 
@@ -622,7 +622,7 @@ function confirmOrder() {
     }
     
     // ตรวจสอบตะกร้าสินค้า
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    let cart = JSON.parse(localStorage.getItem("cartItems")) || [];
     if (cart.length === 0) {
         alert("⚠️ ตะกร้าสินค้าว่างเปล่า! กรุณาเลือกสินค้าใหม่");
         return;
@@ -668,7 +668,7 @@ function confirmOrder() {
                   "กำลังพาคุณกลับสู่หน้าหลัก...");
 
             // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
-            localStorage.removeItem("cart");
+            localStorage.removeItem("cartItems");
             localStorage.removeItem("totalPrice");
             console.log("🗑️ ล้างข้อมูลตะกร้าสำเร็จ");
 
@@ -686,7 +686,7 @@ function confirmOrder() {
                   "กำลังพาคุณกลับสู่หน้าหลัก...");
 
             // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
-            localStorage.removeItem("cart");
+            localStorage.removeItem("cartItems");
             localStorage.removeItem("totalPrice");
             console.log("🗑️ ล้างข้อมูลตะกร้าสำเร็จ");
 
