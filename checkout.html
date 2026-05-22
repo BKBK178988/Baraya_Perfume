@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout - BARAYA PERFUME</title>
     <link rel="stylesheet" href="styles.css">
+
+    <!-- EmailJS - Required for order confirmation -->
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+    <script>
+        (function(){
+            emailjs.init("EUHurGnUrY9Q-SbaO");
+        })();
+    </script>
 </head>
 <body>
 
@@ -38,7 +46,15 @@
             <img id="slipPreview" class="slip-preview">
         </div>
 
-        <button onclick="confirmOrder()">✅ ยืนยันการสั่งซื้อ</button>
+        <button id="confirmOrderBtn" onclick="confirmOrder()">✅ ยืนยันการสั่งซื้อ</button>
+        <button id="manualSubmitBtn" class="fallback-btn">
+            📞 ระบบมีปัญหา? ติดต่อทางร้านโดยตรง
+        </button>
+
+        <h3>📦 รายการสินค้าของคุณ</h3>
+        <div id="order-summary" class="order-summary-box">
+            <ul id="order-items" class="order-items-list"></ul>
+        </div>
     </section>
 
     <!-- 🚀 ขั้นตอน -->

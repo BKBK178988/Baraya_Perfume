@@ -5,6 +5,25 @@
 // 3. totalPrice (ราคารวม)
 // =================================================================
 
+// =================================================================
+// 📧 EmailJS Configuration - ตั้งค่าก่อนใช้งาน
+// =================================================================
+// 1. สมัครบัญชีที่ https://www.emailjs.com/
+// 2. สร้าง Email Service และ Template
+// 3. ใส่ Service ID และ Template ID ด้านล่าง
+// 4. ใส่ Public Key ใน checkout-modern.html
+// 
+// 💡 หากยังไม่ได้ตั้งค่า ระบบจะแสดงคำเตือนแต่ยังทำงานได้
+// 📖 ดูคู่มือเต็มรูปแบบที่ EMAIL_SETUP_GUIDE.md
+// =================================================================
+const EMAILJS_SERVICE_ID = "service_sfp9xjq";
+const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
+
+// Demo IDs for validation comparison
+const DEMO_SERVICE_ID = "service_sfp9xjq";
+const DEMO_TEMPLATE_ID = "template_tcn8bod";
+// =================================================================
+
 // ========== ฟังก์ชัน Validation ==========
 
 /**
@@ -117,6 +136,9 @@ document.addEventListener("DOMContentLoaded", function() {
         console.warn("⚠️ EmailJS is not loaded yet. Some features may not work.");
     } else {
         console.log("✅ EmailJS is ready");
+        // แสดง EmailJS User ID เพื่อการ Debug (ใช้ internal property _userID)
+        // หมายเหตุ: _userID เป็น internal property ที่อาจเปลี่ยนในอนาคต แต่มีประโยชน์สำหรับ debugging
+        console.log("📧 EmailJS User ID:", emailjs && emailjs._userID);
     }
     
     // --- 1. ดึงข้อมูลและกรอกฟอร์มอัตโนมัติ ---
@@ -129,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function() {
         document.getElementById("customer-phone").value = c.phone || "";
     }
 
-    let cartData = localStorage.getItem("cart"); // ⬅️ ใช้ 'cart' ให้ตรงกับ script.js
+    let cartData = localStorage.getItem("cartItems"); // ⬅️ ใช้ 'cartItems' ให้ตรงกับ script.js
     let totalPrice = localStorage.getItem("totalPrice");
     let cart = cartData ? JSON.parse(cartData) : [];
 
@@ -140,8 +162,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // --- 2. แสดงราคารวม ---
-    if (totalPrice) {
-        document.getElementById('display-price').textContent = Number(totalPrice).toLocaleString();
+    const displayPriceElement = document.getElementById('display-price');
+    if (totalPrice && displayPriceElement) {
+        displayPriceElement.textContent = Number(totalPrice).toLocaleString();
     }
     
     // --- 3. สร้าง QR Code พร้อมเพย์ ---
@@ -156,7 +179,13 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // --- 4. ผูกปุ่มยืนยันคำสั่งซื้อ ---
-    document.getElementById('confirmOrderBtn').addEventListener('click', confirmOrder);
+    const confirmBtn = document.getElementById('confirmOrderBtn');
+    if (confirmBtn) {
+        // Use addEventListener for better control and avoid duplicate handlers
+        confirmBtn.addEventListener('click', confirmOrder);
+    } else {
+        console.error("❌ ไม่พบปุ่มยืนยันคำสั่งซื้อ (ID: confirmOrderBtn)");
+    }
     
     // --- 5. แสดงตัวอย่างสลิป (เริ่มต้น) ---
     const slipPreviewContainer = document.getElementById('slipPreviewContainer');
@@ -205,64 +234,300 @@ function previewSlip() {
     if (container) container.classList.remove('hidden');
 }
 
-// ✅ ฟังก์ชันส่งข้อมูลไปยังอีเมล (เปลี่ยนกลับไปใช้ EmailJS ตามที่อยู่ใน HTML เดิม)
-// ⚠️ สำคัญ! กรุณาเปลี่ยน Service ID และ Template ID ตามที่คุณสร้างใน EmailJS
-// Service ID: https://dashboard.emailjs.com/admin
-// Template ID: https://dashboard.emailjs.com/admin/templates
-const EMAILJS_SERVICE_ID = "YOUR_SERVICE_ID_HERE";
-const EMAILJS_TEMPLATE_ID = "YOUR_TEMPLATE_ID_HERE";
-
 /**
  * ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
- * @returns {object} - { isValid: boolean, missingConfig: string[] }
+ * @returns {object} - { isValid: boolean, missingConfig: string[], warning: string[] }
  */
 function validateEmailJSConfig() {
     const missingConfig = [];
+    const warnings = [];
     
-    if (EMAILJS_SERVICE_ID === "YOUR_SERVICE_ID_HERE" || !EMAILJS_SERVICE_ID) {
+    // Check if IDs are still using default demo values
+    if (EMAILJS_SERVICE_ID === DEMO_SERVICE_ID) {
+        warnings.push("Service ID ยังเป็นค่าเริ่มต้น กรุณาอัปเดตเป็นของคุณเอง");
+    }
+    if (EMAILJS_TEMPLATE_ID === DEMO_TEMPLATE_ID) {
+        warnings.push("Template ID ยังเป็นค่าเริ่มต้น กรุณาอัปเดตเป็นของคุณเอง");
+    }
+    
+    // Check if IDs are empty
+    if (!EMAILJS_SERVICE_ID) {
         missingConfig.push("Service ID");
     }
-    if (EMAILJS_TEMPLATE_ID === "YOUR_TEMPLATE_ID_HERE" || !EMAILJS_TEMPLATE_ID) {
+    if (!EMAILJS_TEMPLATE_ID) {
         missingConfig.push("Template ID");
     }
     
     return {
         isValid: missingConfig.length === 0,
-        missingConfig: missingConfig
+        missingConfig: missingConfig,
+        warnings: warnings
     };
 }
 
-function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
+/**
+ * บีบอัดและลดขนาดรูปภาพสำหรับส่งอีเมล
+ * @param {File} file - ไฟล์รูปภาพที่ต้องการบีบอัด
+ * @param {number} maxSizeKB - ขนาดสูงสุดเป็น KB (ค่าเริ่มต้น 500KB)
+ * @returns {Promise<string>} - Base64 string ของรูปภาพที่บีบอัดแล้ว
+ */
+function compressImageForEmail(file, maxSizeKB = 500) {
+    // Constants for compression strategy - use progressive dimension reduction
+    const DIMENSION_STEPS = [1200, 1000, 800, 600, 400]; // ขนาดที่จะลองลดทีละขั้น (เพิ่มขนาดใหญ่ขึ้น)
+    const INITIAL_QUALITY = 0.8; // เริ่มที่ quality 80%
+    const MIN_QUALITY = 0.1; // quality ต่ำสุด
+    const QUALITY_STEP = 0.1; // ลด quality ทีละ 10%
+    
     return new Promise((resolve, reject) => {
-        // ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
-        const configValidation = validateEmailJSConfig();
-        if (!configValidation.isValid) {
-            const errorMsg = `กรุณาตั้งค่า EmailJS ก่อนใช้งาน: ${configValidation.missingConfig.join(", ")}`;
-            console.error("❌ " + errorMsg);
-            reject({
-                status: 400,
-                text: errorMsg,
-                isConfigError: true
-            });
-            return;
-        }
+        // Add timeout to prevent hanging
+        const timeout = setTimeout(() => {
+            reject(new Error('การบีบอัดรูปภาพใช้เวลานานเกินไป'));
+        }, 30000); // 30 second timeout
         
         const reader = new FileReader();
+        
         reader.onload = function(e) {
-            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+            const img = new Image();
+            
+            img.onload = function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    if (!ctx) {
+                        clearTimeout(timeout);
+                        reject(new Error('ไม่สามารถสร้าง canvas context ได้'));
+                        return;
+                    }
+                    
+                    let bestBase64 = '';
+                    let bestSizeKB = Infinity;
+                    
+                    // ลองลดขนาดรูปหลายระดับจนกว่าจะได้ขนาดที่ต้องการ
+                    for (const maxDimension of DIMENSION_STEPS) {
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Guard against zero dimensions
+                        if (width <= 0 || height <= 0) {
+                            clearTimeout(timeout);
+                            reject(new Error('รูปภาพมีขนาดไม่ถูกต้อง'));
+                            return;
+                        }
+                        
+                        // ลดขนาดตามสัดส่วน
+                        if (width > maxDimension || height > maxDimension) {
+                            if (width > height) {
+                                height = Math.round((height / width) * maxDimension);
+                                width = maxDimension;
+                            } else {
+                                width = Math.round((width / height) * maxDimension);
+                                height = maxDimension;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // Clear canvas and draw image
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // ลดคุณภาพจนกว่าจะได้ขนาดที่ต้องการ
+                        let quality = INITIAL_QUALITY;
+                        
+                        while (quality >= MIN_QUALITY) {
+                            const base64 = canvas.toDataURL('image/jpeg', quality);
+                            // Use nullish coalescing to handle undefined from split
+                            const base64Parts = base64.split(',');
+                            const base64Data = (base64Parts.length > 1 ? base64Parts[1] : '') ?? '';
+                            const sizeKB = (base64Data.length * 0.75) / 1024;
+                            
+                            console.log(`🔄 บีบอัด: dimension=${maxDimension}, quality=${quality.toFixed(2)}, size=${sizeKB.toFixed(2)}KB`);
+                            
+                            // เก็บค่าที่ดีที่สุด
+                            if (sizeKB < bestSizeKB) {
+                                bestSizeKB = sizeKB;
+                                bestBase64 = base64;
+                            }
+                            
+                            if (sizeKB <= maxSizeKB) {
+                                clearTimeout(timeout);
+                                console.log(`✅ บีบอัดสำเร็จ: ขนาดสุดท้าย ${sizeKB.toFixed(2)}KB`);
+                                resolve(base64);
+                                return;
+                            }
+                            
+                            quality -= QUALITY_STEP;
+                        }
+                    }
+                    
+                    // ถ้าลดจนสุดแล้วยังใหญ่เกินไป ใช้ค่าที่ดีที่สุดที่ได้
+                    clearTimeout(timeout);
+                    if (bestBase64) {
+                        console.log(`⚠️ บีบอัดที่ค่าต่ำสุดแล้ว: ขนาดสุดท้าย ${bestSizeKB.toFixed(2)}KB`);
+                        resolve(bestBase64);
+                    } else {
+                        reject(new Error('ไม่สามารถบีบอัดรูปภาพได้'));
+                    }
+                } catch (canvasError) {
+                    clearTimeout(timeout);
+                    console.error('Canvas error:', canvasError);
+                    reject(new Error('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ'));
+                }
+            };
+            
+            img.onerror = function() {
+                clearTimeout(timeout);
+                reject(new Error('ไม่สามารถโหลดรูปภาพได้ - รูปแบบไฟล์อาจไม่รองรับ'));
+            };
+            
+            img.src = e.target.result;
+        };
+        
+        reader.onerror = function() {
+            clearTimeout(timeout);
+            reject(new Error('ไม่สามารถอ่านไฟล์ได้'));
+        };
+        
+        reader.readAsDataURL(file);
+    });
+}
+
+/**
+ * ส่งอีเมลผ่าน EmailJS พร้อม retry logic
+ * @param {object} templateParams - พารามิเตอร์สำหรับ EmailJS template
+ * @param {number} maxRetries - จำนวนครั้งที่จะลองส่งซ้ำ
+ * @returns {Promise<void>}
+ */
+async function sendEmailWithRetry(templateParams, maxRetries = 2) {
+    let lastError = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`📤 พยายามส่งอีเมลครั้งที่ ${attempt}/${maxRetries}...`);
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+            console.log(`✅ ส่งอีเมลสำเร็จในครั้งที่ ${attempt}`);
+            return; // สำเร็จ
+        } catch (error) {
+            lastError = error;
+            console.warn(`⚠️ ส่งอีเมลครั้งที่ ${attempt} ไม่สำเร็จ:`, error);
+            
+            // รอก่อนลองใหม่ (exponential backoff)
+            if (attempt < maxRetries) {
+                const waitTime = attempt * 1000; // 1s, 2s, ...
+                console.log(`⏳ รอ ${waitTime}ms ก่อนลองใหม่...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+        }
+    }
+    
+    // ลองครบแล้วยังไม่สำเร็จ
+    throw lastError;
+}
+
+async function sendOrderToEmail(name, email, address, phone, orderDetails, totalPrice, slipFile) {
+    // ตรวจสอบว่า EmailJS Configuration ถูกตั้งค่าแล้วหรือไม่
+    const configValidation = validateEmailJSConfig();
+    
+    // ถ้าขาดข้อมูลที่จำเป็น ให้แจ้ง error
+    if (!configValidation.isValid) {
+        const errorMsg = `กรุณาตั้งค่า EmailJS ก่อนใช้งาน: ${configValidation.missingConfig.join(", ")}`;
+        console.error("❌ " + errorMsg);
+        throw {
+            status: 400,
+            text: errorMsg,
+            isConfigError: true
+        };
+    }
+    
+    // ถ้ามี warnings แต่ยังใช้งานได้ ให้แสดงใน console
+    if (configValidation.warnings.length > 0) {
+        console.warn("⚠️ EmailJS Configuration Warnings:");
+        configValidation.warnings.forEach(w => console.warn("  - " + w));
+    }
+    
+    console.log("📤 Sending email with:", {
+        service: EMAILJS_SERVICE_ID,
+        template: EMAILJS_TEMPLATE_ID,
+        customerEmail: email
+    });
+    
+    let compressedBase64 = null;
+    let imageError = null;
+    
+    // ขั้นตอนที่ 1: พยายามบีบอัดรูปภาพ
+    try {
+        console.log("🔄 กำลังบีบอัดรูปภาพ...");
+        compressedBase64 = await compressImageForEmail(slipFile, 500);
+        // Use safer base64 extraction
+        const base64Parts = compressedBase64.split(',');
+        const base64Data = (base64Parts.length > 1 ? base64Parts[1] : '') ?? '';
+        const sizeKB = (base64Data.length * 0.75) / 1024;
+        console.log(`📊 ขนาดรูปภาพหลังบีบอัด: ${sizeKB.toFixed(2)} KB`);
+    } catch (compressError) {
+        console.warn("⚠️ ไม่สามารถบีบอัดรูปภาพได้:", compressError.message);
+        imageError = compressError;
+    }
+    
+    // ขั้นตอนที่ 2: ลองส่งอีเมลพร้อมรูปภาพ (ถ้ามี)
+    if (compressedBase64) {
+        try {
+            await sendEmailWithRetry({
                 customer_name: name,
                 customer_email: email,
                 customer_address: address,
                 customer_phone: phone,
-                order_list: orderDetails, // Order details must be a string for the template
+                order_list: orderDetails,
                 order_total: totalPrice,
-                slip_image: e.target.result // Base64 image
-            })
-            .then(() => resolve("✅ success"))
-            .catch(err => reject(err));
+                slip_image: compressedBase64
+            });
+            return "✅ success";
+        } catch (emailError) {
+            console.warn("⚠️ ส่งอีเมลพร้อมรูปไม่สำเร็จ ลองส่งแบบไม่มีรูป...", emailError);
+            // ลองต่อในขั้นตอนถัดไป
+        }
+    }
+    
+    // ขั้นตอนที่ 3: Fallback - ส่งอีเมลโดยไม่มีรูปภาพ
+    try {
+        console.log("📤 กำลังส่งอีเมลแบบไม่มีรูปภาพ (Fallback)...");
+        await sendEmailWithRetry({
+            customer_name: name,
+            customer_email: email,
+            customer_address: address,
+            customer_phone: phone,
+            order_list: orderDetails,
+            order_total: totalPrice,
+            slip_image: "⚠️ ไม่สามารถแนบรูปสลิปได้ กรุณาติดต่อลูกค้าเพื่อขอสลิป\nโทร: " + phone
+        });
+        
+        console.log("✅ ส่งอีเมลสำเร็จ (แบบไม่มีรูป)");
+        return "✅ success_without_image";
+    } catch (fallbackError) {
+        console.error("❌ ไม่สามารถส่งอีเมลได้:", fallbackError);
+        
+        // สร้าง error message ที่เข้าใจง่าย
+        let errorText = "ไม่สามารถส่งอีเมลได้";
+        
+        if (fallbackError.status === 429) {
+            errorText = "ส่งอีเมลมากเกินไป กรุณารอ 1-2 นาทีแล้วลองใหม่";
+        } else if (fallbackError.status === 401 || fallbackError.status === 403) {
+            errorText = "ระบบอีเมลมีปัญหาเรื่องการยืนยันตัวตน กรุณาติดต่อทางร้าน";
+        } else if (fallbackError.text && fallbackError.text.includes('template')) {
+            errorText = "ไม่พบรูปแบบอีเมล กรุณาติดต่อทางร้าน";
+        } else if (fallbackError.text && fallbackError.text.includes('service')) {
+            errorText = "ไม่พบบริการอีเมล กรุณาติดต่อทางร้าน";
+        } else if (imageError) {
+            errorText = `ไม่สามารถประมวลผลรูปภาพ (${imageError.message}) และไม่สามารถส่งอีเมลได้`;
+        }
+        
+        throw {
+            status: fallbackError.status || 500,
+            text: errorText
         };
-        reader.readAsDataURL(slipFile);
-    });
+    }
 }
 
 // ✅ ฟังก์ชันยืนยันคำสั่งซื้อ + บันทึกข้อมูลลูกค้า (ปรับปรุง)
@@ -358,7 +623,7 @@ function confirmOrder() {
     }
     
     // ตรวจสอบตะกร้าสินค้า
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    let cart = JSON.parse(localStorage.getItem("cartItems")) || [];
     if (cart.length === 0) {
         alert("⚠️ ตะกร้าสินค้าว่างเปล่า! กรุณาเลือกสินค้าใหม่");
         return;
@@ -367,7 +632,7 @@ function confirmOrder() {
     // ตรวจสอบว่า EmailJS พร้อมใช้งาน
     if (!isEmailJSReady()) {
         console.error("❌ EmailJS is not available");
-        alert("⚠️ ระบบส่งอีเมลยังไม่พร้อมใช้งาน กรุณารอสักครู่แล้วลองใหม่\nหากยังไม่สำเร็จ กรุณาติดต่อทางร้านโดยตรง");
+        alert("⚠️ ระบบส่งอีเมลยังไม่พร้อมใช้งาน กรุณารอสักครู่แล้วลองใหม่\nหากปัญหายังคงอยู่ กรุณาติดต่อทางร้าน");
         return;
     }
 
@@ -397,10 +662,32 @@ function confirmOrder() {
         setLoading(false);
         
         if (result === "✅ success") {
-            alert("✅ สั่งซื้อสำเร็จ! อีเมลยืนยันถูกส่งแล้ว\nขอบคุณที่ใช้บริการ BARAYA PERFUME");
+            alert("✅ สั่งซื้อสำเร็จ!\n\n" +
+                  "📧 อีเมลยืนยันถูกส่งไปยังอีเมลของคุณแล้ว\n" +
+                  "📨 เจ้าของร้านได้รับคำสั่งซื้อและจะติดต่อกลับเร็วๆ นี้\n\n" +
+                  "ขอบคุณที่ใช้บริการ BARAYA PERFUME ❤️\n" +
+                  "กำลังพาคุณกลับสู่หน้าหลัก...");
 
             // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
-            localStorage.removeItem("cart");
+            localStorage.removeItem("cartItems");
+            localStorage.removeItem("totalPrice");
+            console.log("🗑️ ล้างข้อมูลตะกร้าสำเร็จ");
+
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 2000);
+        } else if (result === "✅ success_without_image") {
+            // สำเร็จแต่ไม่มีรูปสลิป
+            alert("✅ สั่งซื้อสำเร็จ!\n\n" +
+                  "⚠️ หมายเหตุ: ไม่สามารถแนบรูปสลิปในอีเมลได้\n" +
+                  "📞 ทางร้านจะติดต่อกลับเพื่อขอรูปสลิปเพิ่มเติม\n\n" +
+                  "📧 อีเมลยืนยันถูกส่งไปยังอีเมลของคุณแล้ว\n" +
+                  "📨 เจ้าของร้านได้รับคำสั่งซื้อและจะติดต่อกลับเร็วๆ นี้\n\n" +
+                  "ขอบคุณที่ใช้บริการ BARAYA PERFUME ❤️\n" +
+                  "กำลังพาคุณกลับสู่หน้าหลัก...");
+
+            // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
+            localStorage.removeItem("cartItems");
             localStorage.removeItem("totalPrice");
             console.log("🗑️ ล้างข้อมูลตะกร้าสำเร็จ");
 
@@ -440,14 +727,31 @@ function confirmOrder() {
             errorMessage += "กรุณาตรวจสอบ Public Key ใน EmailJS\n";
             errorMessage += "https://dashboard.emailjs.com/admin/account";
         } else if (error.status === 429) {
-            errorMessage += "สาเหตุ: ส่งคำขอมากเกินไป\nกรุณารอสักครู่แล้วลองใหม่อีกครั้ง";
+            errorMessage += "สาเหตุ: ส่งคำขอมากเกินไป\nกรุณารอสักครู่แล้วลองใหม่อีกครั้ง (ประมาณ 1-2 นาที)";
         } else if (error.text) {
-            errorMessage += `รายละเอียด: ${error.text}\nกรุณาติดต่อทางร้านโดยตรง`;
+            errorMessage += `รายละเอียด: ${error.text}\nแนะนำ: กรุณาลดขนาดไฟล์สลิปหรือติดต่อทางร้านโดยตรง`;
         } else {
-            errorMessage += "กรุณาลองใหม่อีกครั้ง หรือติดต่อทางร้านโดยตรง\n\nหมายเลขโทรศัพท์: 063-939-2988";
+            errorMessage += "กรุณาลองใหม่อีกครั้ง หรือติดต่อทางร้านโดยตรง\n\nหมายเลขโทร: 063-939-2988\nLine: @barayaperfume";
         }
         
         alert(errorMessage);
+        
+        // แสดงปุ่มติดต่อทางร้านหากมีข้อผิดพลาดครบ 3 ครั้ง
+        // ค่านี้เป็น threshold ที่เหมาะสมสำหรับการแจ้งเตือน fallback option
+        const MAX_ERROR_COUNT = 3;
+        let errorCount = parseInt(sessionStorage.getItem('checkoutErrorCount') || '0');
+        errorCount++;
+        sessionStorage.setItem('checkoutErrorCount', errorCount);
+
+        if (errorCount >= MAX_ERROR_COUNT) {
+            const manualBtn = document.getElementById('manualSubmitBtn');
+            if (manualBtn) {
+                manualBtn.style.display = 'block';
+                manualBtn.onclick = () => {
+                    window.open('https://line.me/R/ti/p/@barayaperfume', '_blank');
+                };
+            }
+        }
     });
 }
 
