@@ -1,5 +1,24 @@
 let cart = [];
 
+const productImages = {
+    "AQUA.M": "AQUA.M.png",
+    "BOMSHELL": "BOMSHELL.png",
+    "BOMBSHELL": "BOMSHELL.png",
+    "FIRST LOVE": "FIRST LOVE.png",
+    "MONG BLACK": "MONG BLACK.png",
+    "VIN VIN": "VIN VIN.png",
+    "BERRY": "BERRY.png",
+    "BERRY HER": "BERRY.png",
+    "READY PINK": "READY PINK.png",
+    "BLACK. M": "BLACK M..png",
+    "BLACK.M": "BLACK M..png",
+    "CRYSTAL": "CRYSTAL.png"
+};
+
+function getProductImage(name) {
+    return productImages[name] || productImages[name?.toUpperCase?.()] || "BARAYA.png";
+}
+
 // โหลดตะกร้าจาก LocalStorage เมื่อเปิดหน้าเว็บ
 document.addEventListener("DOMContentLoaded", function() {
     try {
@@ -18,11 +37,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
 function addToCart(name, price) {
     let existingItem = cart.find(item => item.name === name);
+    let image = getProductImage(name);
     
     if (existingItem) {
         existingItem.quantity += 1;
+        existingItem.image = existingItem.image || image;
     } else {
-        cart.push({ name, price, quantity: 1 });
+        cart.push({ name, price, quantity: 1, image });
     }
 
     updateCart();
@@ -60,9 +81,36 @@ function updateCart() {
     let totalItems = 0;
 
     cart.forEach(item => {
+        item.image = item.image || getProductImage(item.name);
+
         let li = document.createElement("li");
-        li.innerHTML = `${item.name} x${item.quantity} - ${item.price * item.quantity} บาท 
-                        <button onclick="removeFromCart('${item.name}')">❌ ลบ</button>`;
+        li.className = "cart-item";
+
+        let img = document.createElement("img");
+        img.className = "cart-item-image";
+        img.src = item.image;
+        img.alt = item.name;
+
+        let details = document.createElement("div");
+        details.className = "cart-item-details";
+
+        let title = document.createElement("strong");
+        title.textContent = item.name;
+
+        let meta = document.createElement("span");
+        meta.textContent = `จำนวน ${item.quantity} ชิ้น - ${item.price * item.quantity} บาท`;
+
+        details.appendChild(title);
+        details.appendChild(meta);
+
+        let removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.textContent = "❌ ลบ";
+        removeButton.addEventListener("click", () => removeFromCart(item.name));
+
+        li.appendChild(img);
+        li.appendChild(details);
+        li.appendChild(removeButton);
         cartList.appendChild(li);
         total += item.price * item.quantity;
         totalItems += item.quantity;
@@ -94,6 +142,135 @@ function updateCart() {
         console.log('🔵 LINE URL updated:', lineURL);
     }
 }
+
+function waitForImages(container) {
+    const images = Array.from(container.querySelectorAll("img"));
+    return Promise.all(images.map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve;
+        });
+    }));
+}
+
+function createOrderCaptureElement() {
+    let total = 0;
+    let totalItems = 0;
+    const capture = document.createElement("div");
+    capture.className = "order-capture";
+
+    const header = document.createElement("div");
+    header.className = "order-capture-header";
+    header.innerHTML = `
+        <div class="order-brand">BARAYA PERFUME</div>
+        <div class="order-title">รายการออเดอร์</div>
+    `;
+    capture.appendChild(header);
+
+    const list = document.createElement("div");
+    list.className = "order-capture-list";
+
+    cart.forEach(item => {
+        const image = item.image || getProductImage(item.name);
+        const lineTotal = item.price * item.quantity;
+        total += lineTotal;
+        totalItems += item.quantity;
+
+        const row = document.createElement("div");
+        row.className = "order-capture-item";
+        row.innerHTML = `
+            <img class="order-capture-image" src="${image}" alt="${item.name}">
+            <div class="order-capture-details">
+                <strong>${item.name}</strong>
+                <span>${item.price} บาท / ชิ้น</span>
+            </div>
+            <div class="order-capture-qty">x${item.quantity}</div>
+            <div class="order-capture-price">${lineTotal} บาท</div>
+        `;
+        list.appendChild(row);
+    });
+
+    capture.appendChild(list);
+
+    const totalBox = document.createElement("div");
+    totalBox.className = "order-capture-total";
+    totalBox.innerHTML = `
+        <span>รวม ${totalItems} ชิ้น</span>
+        <strong>${total} บาท</strong>
+    `;
+    capture.appendChild(totalBox);
+
+    const footer = document.createElement("div");
+    footer.className = "order-capture-footer";
+    footer.textContent = "ส่งรูปนี้ให้ร้านเพื่อยืนยันรายการสินค้า";
+    capture.appendChild(footer);
+
+    return capture;
+}
+
+async function saveCartOrderImage() {
+    if (cart.length === 0) {
+        alert("⚠️ กรุณาเพิ่มสินค้าลงตะกร้าก่อนบันทึกออเดอร์");
+        return;
+    }
+
+    if (typeof html2canvas === "undefined") {
+        alert("❌ โปรดรีเฟรชหน้าเว็บแล้วลองใหม่");
+        return;
+    }
+
+    let captureElement;
+    try {
+        if (window.showLoading) showLoading("กำลังสร้างรูปออเดอร์...");
+
+        captureElement = createOrderCaptureElement();
+        document.body.appendChild(captureElement);
+        await waitForImages(captureElement);
+
+        const canvas = await html2canvas(captureElement, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+            useCORS: true,
+            allowTaint: true
+        });
+
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 1));
+        if (!blob) throw new Error("ไม่สามารถสร้างรูปภาพได้");
+
+        const file = new File([blob], "BARAYA_ORDER.png", { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: "BARAYA PERFUME ORDER",
+                text: "รายการสินค้าที่ต้องการสั่งซื้อ"
+            });
+        } else {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `BARAYA_ORDER_${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+        }
+
+        if (window.toast) {
+            toast.success("บันทึกรูปออเดอร์สำเร็จ!");
+        } else {
+            alert("✅ บันทึกรูปออเดอร์สำเร็จ!");
+        }
+    } catch (error) {
+        console.error("Save order image failed:", error);
+        alert("❌ เกิดข้อผิดพลาด: " + error.message);
+    } finally {
+        if (captureElement) captureElement.remove();
+        if (window.hideLoading) hideLoading();
+    }
+}
+
+window.saveCartOrderImage = saveCartOrderImage;
 
 function toggleCart() {
     let cartElement = document.getElementById("cart");
