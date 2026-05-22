@@ -55,6 +55,10 @@ header {
 
 .product img {
     width: 100%;
+    aspect-ratio: 1023 / 1537;
+    height: auto;
+    display: block;
+    object-fit: contain;
     border-radius: 10px;
     transition: transform 0.3s ease;
 }
