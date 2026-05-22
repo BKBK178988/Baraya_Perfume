@@ -18,6 +18,7 @@
 // =================================================================
 const EMAILJS_SERVICE_ID = "service_sfp9xjq";
 const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
+const LINE_SHARE_URL = "https://line.me/R/share?text=";
 
 // Demo IDs for validation comparison
 const DEMO_SERVICE_ID = "service_sfp9xjq";
@@ -530,6 +531,77 @@ async function sendOrderToEmail(name, email, address, phone, orderDetails, total
     }
 }
 
+function buildOrderText(order) {
+    const itemLines = order.cart
+        .map(item => `- ${item.name} x${item.quantity} = ${(item.price * item.quantity).toLocaleString()} บาท`)
+        .join("\n");
+
+    return [
+        "สวัสดีค่ะ/ครับ ต้องการยืนยันคำสั่งซื้อ BARAYA PERFUME",
+        "",
+        `ชื่อ: ${order.name}`,
+        `โทร: ${order.phone}`,
+        `อีเมล: ${order.email}`,
+        `ที่อยู่: ${order.address}`,
+        "",
+        "รายการสินค้า:",
+        itemLines,
+        "",
+        `ยอดรวม: ${Number(order.totalPrice).toLocaleString()} บาท`,
+        "",
+        "แนบสลิปโอนเงินในแชทนี้แล้ว กรุณาตรวจสอบและยืนยันคำสั่งซื้อค่ะ/ครับ"
+    ].join("\n");
+}
+
+function savePendingOrder(order) {
+    localStorage.setItem("pendingOrder", JSON.stringify({
+        ...order,
+        createdAt: new Date().toISOString()
+    }));
+}
+
+function openLineOrder(order) {
+    const message = buildOrderText(order);
+    window.open(`${LINE_SHARE_URL}${encodeURIComponent(message)}`, "_blank");
+}
+
+function handleEmailFailure(orderPayload, reason) {
+    console.error("❌ ส่งอีเมลไม่สำเร็จ ใช้ LINE fallback:", reason);
+    setLoading(false);
+
+    const manualBtn = document.getElementById('manualSubmitBtn');
+    if (manualBtn) {
+        manualBtn.style.display = 'block';
+        manualBtn.textContent = '📲 ส่งคำสั่งซื้อผ่าน LINE';
+        manualBtn.onclick = () => openLineOrder(orderPayload);
+    }
+
+    alert(
+        "✅ บันทึกคำสั่งซื้อแล้ว\n\n" +
+        "⚠️ ระบบส่งอีเมลอัตโนมัติไม่สำเร็จ แต่ข้อมูลออเดอร์ของคุณถูกเตรียมไว้แล้ว\n" +
+        "ระบบจะเปิด LINE ให้ส่งรายการสินค้าและที่อยู่ให้ร้านโดยตรง\n\n" +
+        "กรุณาแนบรูปสลิปในแชท LINE อีกครั้ง เพื่อให้ร้านตรวจสอบและยืนยันคำสั่งซื้อ\n\n" +
+        "หาก LINE ไม่เปิด ให้กดปุ่ม “ส่งคำสั่งซื้อผ่าน LINE” อีกครั้ง"
+    );
+    openLineOrder(orderPayload);
+}
+
+function finishSuccessfulOrder(message, shouldOpenLine, order) {
+    alert(message);
+
+    if (shouldOpenLine && order) {
+        openLineOrder(order);
+    }
+
+    localStorage.removeItem("cartItems");
+    localStorage.removeItem("totalPrice");
+    console.log("🗑️ ล้างข้อมูลตะกร้าสำเร็จ");
+
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 2500);
+}
+
 // ✅ ฟังก์ชันยืนยันคำสั่งซื้อ + บันทึกข้อมูลลูกค้า (ปรับปรุง)
 function confirmOrder() {
     console.log("📝 เริ่มการยืนยันคำสั่งซื้อ...");
@@ -628,13 +700,19 @@ function confirmOrder() {
         alert("⚠️ ตะกร้าสินค้าว่างเปล่า! กรุณาเลือกสินค้าใหม่");
         return;
     }
-    
-    // ตรวจสอบว่า EmailJS พร้อมใช้งาน
-    if (!isEmailJSReady()) {
-        console.error("❌ EmailJS is not available");
-        alert("⚠️ ระบบส่งอีเมลยังไม่พร้อมใช้งาน กรุณารอสักครู่แล้วลองใหม่\nหากปัญหายังคงอยู่ กรุณาติดต่อทางร้าน");
-        return;
-    }
+
+    let totalPrice = localStorage.getItem("totalPrice") || cart.reduce((sum, item) => {
+        return sum + (Number(item.price) * Number(item.quantity));
+    }, 0);
+
+    const orderPayload = {
+        name,
+        email,
+        address,
+        phone,
+        cart,
+        totalPrice
+    };
 
     // ⭐ บันทึกข้อมูลลูกค้าใส่ LocalStorage (ใช้ 'customerInfo')
     localStorage.setItem("customerInfo", JSON.stringify({
@@ -643,15 +721,21 @@ function confirmOrder() {
         address: address,
         phone: phone
     }));
+    savePendingOrder(orderPayload);
     console.log("💾 บันทึกข้อมูลลูกค้าสำเร็จ");
 
     // สร้าง OrderDetails สำหรับ EmailJS (เป็นข้อความบรรทัดต่อบรรทัด)
     let orderDetails = cart.map(item => `📦 ${item.name} x${item.quantity} - ${item.price * item.quantity} บาท`).join("\n");
-    let totalPrice = localStorage.getItem("totalPrice");
     
     console.log("📧 กำลังส่งข้อมูลไปยัง EmailJS...");
     console.log("📋 Order Details:", orderDetails);
     console.log("💰 Total Price:", totalPrice);
+
+    // ถ้า EmailJS ไม่พร้อม ให้ใช้ LINE fallback ทันที ไม่บล็อกการยืนยันคำสั่งซื้อ
+    if (!isEmailJSReady()) {
+        handleEmailFailure(orderPayload, new Error("EmailJS is not available"));
+        return;
+    }
     
     // แสดง Loading State
     setLoading(true);
@@ -662,96 +746,32 @@ function confirmOrder() {
         setLoading(false);
         
         if (result === "✅ success") {
-            alert("✅ สั่งซื้อสำเร็จ!\n\n" +
-                  "📧 อีเมลยืนยันถูกส่งไปยังอีเมลของคุณแล้ว\n" +
-                  "📨 เจ้าของร้านได้รับคำสั่งซื้อและจะติดต่อกลับเร็วๆ นี้\n\n" +
-                  "ขอบคุณที่ใช้บริการ BARAYA PERFUME ❤️\n" +
-                  "กำลังพาคุณกลับสู่หน้าหลัก...");
-
-            // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
-            localStorage.removeItem("cartItems");
-            localStorage.removeItem("totalPrice");
-            console.log("🗑️ ล้างข้อมูลตะกร้าสำเร็จ");
-
-            setTimeout(() => {
-                window.location.href = "index.html";
-            }, 2000);
+            localStorage.removeItem("pendingOrder");
+            finishSuccessfulOrder(
+                "✅ สั่งซื้อสำเร็จ!\n\n" +
+                "📧 อีเมลยืนยันถูกส่งไปยังอีเมลของคุณแล้ว\n" +
+                "📨 เจ้าของร้านได้รับคำสั่งซื้อและจะติดต่อกลับเร็วๆ นี้\n\n" +
+                "ขอบคุณที่ใช้บริการ BARAYA PERFUME ❤️\n" +
+                "กำลังพาคุณกลับสู่หน้าหลัก...",
+                false,
+                orderPayload
+            );
         } else if (result === "✅ success_without_image") {
             // สำเร็จแต่ไม่มีรูปสลิป
-            alert("✅ สั่งซื้อสำเร็จ!\n\n" +
-                  "⚠️ หมายเหตุ: ไม่สามารถแนบรูปสลิปในอีเมลได้\n" +
-                  "📞 ทางร้านจะติดต่อกลับเพื่อขอรูปสลิปเพิ่มเติม\n\n" +
-                  "📧 อีเมลยืนยันถูกส่งไปยังอีเมลของคุณแล้ว\n" +
-                  "📨 เจ้าของร้านได้รับคำสั่งซื้อและจะติดต่อกลับเร็วๆ นี้\n\n" +
-                  "ขอบคุณที่ใช้บริการ BARAYA PERFUME ❤️\n" +
-                  "กำลังพาคุณกลับสู่หน้าหลัก...");
-
-            // ล้างข้อมูลตะกร้าหลังสั่งซื้อสำเร็จ
-            localStorage.removeItem("cartItems");
-            localStorage.removeItem("totalPrice");
-            console.log("🗑️ ล้างข้อมูลตะกร้าสำเร็จ");
-
-            setTimeout(() => {
-                window.location.href = "index.html";
-            }, 2000);
+            localStorage.removeItem("pendingOrder");
+            finishSuccessfulOrder(
+                "✅ สั่งซื้อสำเร็จ!\n\n" +
+                "⚠️ หมายเหตุ: อีเมลส่งได้ แต่แนบรูปสลิปไม่ได้\n" +
+                "ระบบจะเปิด LINE เพื่อให้คุณส่งสลิปให้ร้านโดยตรง\n\n" +
+                "📧 อีเมลยืนยันถูกส่งไปยังอีเมลของคุณแล้ว\n" +
+                "ขอบคุณที่ใช้บริการ BARAYA PERFUME ❤️",
+                true,
+                orderPayload
+            );
         }
     })
     .catch(error => {
-        console.error("❌ เกิดข้อผิดพลาดในการยืนยันคำสั่งซื้อ:", error);
-        setLoading(false);
-        
-        // แสดง Error Message ที่ละเอียดมากขึ้น
-        let errorMessage = "❌ เกิดข้อผิดพลาดในการส่งอีเมล\n\n";
-        
-        // ตรวจสอบว่าเป็น Configuration Error หรือไม่
-        if (error.isConfigError) {
-            errorMessage += "สาเหตุ: ยังไม่ได้ตั้งค่า EmailJS\n";
-            errorMessage += "กรุณาตั้งค่า Service ID และ Template ID ในไฟล์ checkout.js\n\n";
-            errorMessage += "วิธีแก้ไข:\n";
-            errorMessage += "1. สมัครบัญชี EmailJS ที่ https://www.emailjs.com/\n";
-            errorMessage += "2. สร้าง Email Service และ Template\n";
-            errorMessage += "3. คัดลอก Service ID, Template ID และ Public Key\n";
-            errorMessage += "4. แก้ไขค่าในไฟล์ checkout.js และ checkout-modern.html";
-        } else if (error.status === 400 && error.text && error.text.includes('template')) {
-            errorMessage += "สาเหตุ: ไม่พบ Email Template\n";
-            errorMessage += "กรุณาตรวจสอบ Template ID ใน EmailJS Dashboard\n";
-            errorMessage += "https://dashboard.emailjs.com/admin/templates";
-        } else if (error.status === 400 && error.text && error.text.includes('service')) {
-            errorMessage += "สาเหตุ: ไม่พบ Email Service\n";
-            errorMessage += "กรุณาตรวจสอบ Service ID ใน EmailJS Dashboard\n";
-            errorMessage += "https://dashboard.emailjs.com/admin";
-        } else if (error.status === 400) {
-            errorMessage += "สาเหตุ: ข้อมูลที่ส่งไม่ถูกต้อง\nกรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง";
-        } else if (error.status === 401 || error.status === 403) {
-            errorMessage += "สาเหตุ: Public Key ไม่ถูกต้อง\n";
-            errorMessage += "กรุณาตรวจสอบ Public Key ใน EmailJS\n";
-            errorMessage += "https://dashboard.emailjs.com/admin/account";
-        } else if (error.status === 429) {
-            errorMessage += "สาเหตุ: ส่งคำขอมากเกินไป\nกรุณารอสักครู่แล้วลองใหม่อีกครั้ง (ประมาณ 1-2 นาที)";
-        } else if (error.text) {
-            errorMessage += `รายละเอียด: ${error.text}\nแนะนำ: กรุณาลดขนาดไฟล์สลิปหรือติดต่อทางร้านโดยตรง`;
-        } else {
-            errorMessage += "กรุณาลองใหม่อีกครั้ง หรือติดต่อทางร้านโดยตรง\n\nหมายเลขโทร: 063-939-2988\nLine: @barayaperfume";
-        }
-        
-        alert(errorMessage);
-        
-        // แสดงปุ่มติดต่อทางร้านหากมีข้อผิดพลาดครบ 3 ครั้ง
-        // ค่านี้เป็น threshold ที่เหมาะสมสำหรับการแจ้งเตือน fallback option
-        const MAX_ERROR_COUNT = 3;
-        let errorCount = parseInt(sessionStorage.getItem('checkoutErrorCount') || '0');
-        errorCount++;
-        sessionStorage.setItem('checkoutErrorCount', errorCount);
-
-        if (errorCount >= MAX_ERROR_COUNT) {
-            const manualBtn = document.getElementById('manualSubmitBtn');
-            if (manualBtn) {
-                manualBtn.style.display = 'block';
-                manualBtn.onclick = () => {
-                    window.open('https://line.me/R/ti/p/@barayaperfume', '_blank');
-                };
-            }
-        }
+        handleEmailFailure(orderPayload, error);
     });
 }
 
@@ -785,4 +805,3 @@ function downloadQRCode() {
         alert("❌ ไม่สามารถดาวน์โหลด QR Code ได้");
     }
 }
-
