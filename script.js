@@ -154,6 +154,86 @@ function waitForImages(container) {
     }));
 }
 
+function isLineInAppBrowser() {
+    return /Line\//i.test(navigator.userAgent);
+}
+
+function isIOSBrowser() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (
+        navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1
+    );
+}
+
+function showImageSavePreview(imageUrl, filename, revokeUrl) {
+    const existingModal = document.querySelector(".image-save-modal");
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement("div");
+    modal.className = "image-save-modal";
+    modal.innerHTML = `
+        <div class="image-save-panel" role="dialog" aria-modal="true" aria-label="บันทึกรูปภาพ">
+            <button type="button" class="image-save-close" aria-label="ปิด">×</button>
+            <div class="image-save-title">บันทึกรูปภาพ</div>
+            <p class="image-save-help">ใน LINE ให้กดค้างที่รูป แล้วเลือกบันทึกรูปภาพ</p>
+            <img class="image-save-preview" src="${imageUrl}" alt="${filename}">
+            <button type="button" class="image-save-download">ดาวน์โหลดอีกครั้ง</button>
+        </div>
+    `;
+
+    const closeModal = () => {
+        modal.remove();
+        if (revokeUrl) {
+            setTimeout(() => URL.revokeObjectURL(imageUrl), 100);
+        }
+    };
+
+    modal.querySelector(".image-save-close").addEventListener("click", closeModal);
+    modal.addEventListener("click", event => {
+        if (event.target === modal) closeModal();
+    });
+    modal.querySelector(".image-save-download").addEventListener("click", () => {
+        const link = document.createElement("a");
+        link.href = imageUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    document.body.appendChild(modal);
+}
+
+async function saveImageBlob(blob, filename, shareTitle, shareText) {
+    const shouldUsePreview = isLineInAppBrowser() || isIOSBrowser();
+
+    if (!shouldUsePreview && typeof File !== "undefined") {
+        const file = new File([blob], filename, { type: blob.type || "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: shareTitle,
+                text: shareText
+            });
+            return;
+        }
+    }
+
+    const url = URL.createObjectURL(blob);
+
+    if (shouldUsePreview) {
+        showImageSavePreview(url, filename, true);
+        return;
+    }
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
 function createOrderCaptureElement() {
     let total = 0;
     let totalItems = 0;
@@ -238,28 +318,23 @@ async function saveCartOrderImage() {
         const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 1));
         if (!blob) throw new Error("ไม่สามารถสร้างรูปภาพได้");
 
-        const file = new File([blob], "BARAYA_ORDER.png", { type: "image/png" });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: "BARAYA PERFUME ORDER",
-                text: "รายการสินค้าที่ต้องการสั่งซื้อ"
-            });
-        } else {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `BARAYA_ORDER_${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-        }
+        await saveImageBlob(
+            blob,
+            `BARAYA_ORDER_${Date.now()}.png`,
+            "BARAYA PERFUME ORDER",
+            "รายการสินค้าที่ต้องการสั่งซื้อ"
+        );
 
         if (window.toast) {
-            toast.success("บันทึกรูปออเดอร์สำเร็จ!");
+            const message = isLineInAppBrowser() || isIOSBrowser()
+                ? "เปิดรูปสำหรับบันทึกแล้ว"
+                : "บันทึกรูปออเดอร์สำเร็จ!";
+            toast.success(message);
         } else {
-            alert("✅ บันทึกรูปออเดอร์สำเร็จ!");
+            const message = isLineInAppBrowser() || isIOSBrowser()
+                ? "✅ เปิดรูปแล้ว กรุณากดค้างที่รูปเพื่อบันทึก"
+                : "✅ บันทึกรูปออเดอร์สำเร็จ!";
+            alert(message);
         }
     } catch (error) {
         console.error("Save order image failed:", error);
@@ -271,6 +346,7 @@ async function saveCartOrderImage() {
 }
 
 window.saveCartOrderImage = saveCartOrderImage;
+window.showImageSavePreview = showImageSavePreview;
 
 function toggleCart() {
     let cartElement = document.getElementById("cart");

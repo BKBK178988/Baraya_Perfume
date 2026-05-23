@@ -791,10 +791,56 @@ function previewSlip() {
     }
 }
 
+function showImageSavePreview(imageUrl, filename, revokeUrl) {
+    const existingModal = document.querySelector(".image-save-modal");
+    if (existingModal) existingModal.remove();
+
+    const modal = document.createElement("div");
+    modal.className = "image-save-modal";
+    modal.innerHTML = `
+        <div class="image-save-panel" role="dialog" aria-modal="true" aria-label="บันทึกรูปภาพ">
+            <button type="button" class="image-save-close" aria-label="ปิด">×</button>
+            <div class="image-save-title">บันทึกรูปภาพ</div>
+            <p class="image-save-help">ใน LINE ให้กดค้างที่รูป แล้วเลือกบันทึกรูปภาพ</p>
+            <img class="image-save-preview" src="${imageUrl}" alt="${filename}">
+            <button type="button" class="image-save-download">ดาวน์โหลดอีกครั้ง</button>
+        </div>
+    `;
+
+    const closeModal = () => {
+        modal.remove();
+        if (revokeUrl) {
+            setTimeout(() => URL.revokeObjectURL(imageUrl), 100);
+        }
+    };
+
+    modal.querySelector(".image-save-close").addEventListener("click", closeModal);
+    modal.addEventListener("click", event => {
+        if (event.target === modal) closeModal();
+    });
+    modal.querySelector(".image-save-download").addEventListener("click", () => {
+        const link = document.createElement("a");
+        link.href = imageUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    document.body.appendChild(modal);
+}
+
+window.showImageSavePreview = window.showImageSavePreview || showImageSavePreview;
+
 // ✅ ฟังก์ชันดาวน์โหลด QR Code
 function downloadQRCode() {
     let qrImage = document.getElementById("qr-code");
     if (qrImage && qrImage.src) {
+        if (typeof window.showImageSavePreview === "function" && /Line\/|iPad|iPhone|iPod/i.test(navigator.userAgent)) {
+            window.showImageSavePreview(qrImage.src, "qr-payment.png", false);
+            return;
+        }
+
         let link = document.createElement("a");
         link.href = qrImage.src;
         link.download = "qr-payment.png";
