@@ -33,6 +33,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     updateCart();
+    setupLineOrderButton();
 });
 
 function addToCart(name, price) {
@@ -128,7 +129,7 @@ function updateCart() {
     localStorage.setItem("cartItems", JSON.stringify(cart));
     localStorage.setItem("totalPrice", total);
 
-    // อัปเดตลิงก์ LINE พร้อมรายการสินค้า
+    // เก็บ fallback URL ไว้ใช้เฉพาะกรณีที่แชร์รูปไม่ได้
     if (lineOrderButton) {
         let message = cart.length > 0 
             ? `สวัสดีค่ะ! ฉันต้องการสั่งซื้อสินค้า BARAYA PERFUME:\n\n${cart.map(item => `🌸 ${item.name} x${item.quantity} = ${item.price * item.quantity} บาท`).join("\n")}\n\n💰 ยอดรวม: ${total} บาท`
@@ -138,6 +139,7 @@ function updateCart() {
         let lineURL = `https://line.me/ti/p/~bk0704?text=${encodeURIComponent(message)}`;
         
         lineOrderButton.href = lineURL;
+        lineOrderButton.dataset.lineUrl = lineURL;
         
         console.log('🔵 LINE URL updated:', lineURL);
     }
@@ -164,19 +166,26 @@ function isIOSBrowser() {
     );
 }
 
-function showImageSavePreview(imageUrl, filename, revokeUrl) {
+function showImageSavePreview(imageUrl, filename, revokeUrl, options = {}) {
     const existingModal = document.querySelector(".image-save-modal");
     if (existingModal) existingModal.remove();
+
+    const title = options.title || "บันทึกรูปภาพ";
+    const help = options.help || "ใน LINE ให้กดค้างที่รูป แล้วเลือกบันทึกรูปภาพ";
+    const actionLabel = options.actionLabel || "ดาวน์โหลดอีกครั้ง";
+    const secondaryLabel = options.secondaryLabel || "";
+    const secondaryUrl = options.secondaryUrl || "";
 
     const modal = document.createElement("div");
     modal.className = "image-save-modal";
     modal.innerHTML = `
         <div class="image-save-panel" role="dialog" aria-modal="true" aria-label="บันทึกรูปภาพ">
             <button type="button" class="image-save-close" aria-label="ปิด">×</button>
-            <div class="image-save-title">บันทึกรูปภาพ</div>
-            <p class="image-save-help">ใน LINE ให้กดค้างที่รูป แล้วเลือกบันทึกรูปภาพ</p>
+            <div class="image-save-title">${title}</div>
+            <p class="image-save-help">${help}</p>
             <img class="image-save-preview" src="${imageUrl}" alt="${filename}">
-            <button type="button" class="image-save-download">ดาวน์โหลดอีกครั้ง</button>
+            <button type="button" class="image-save-download">${actionLabel}</button>
+            ${secondaryUrl ? `<a class="image-save-secondary" href="${secondaryUrl}" target="_blank" rel="noopener">${secondaryLabel}</a>` : ""}
         </div>
     `;
 
@@ -201,6 +210,36 @@ function showImageSavePreview(imageUrl, filename, revokeUrl) {
     });
 
     document.body.appendChild(modal);
+}
+
+async function createOrderImageBlob() {
+    if (cart.length === 0) {
+        throw new Error("กรุณาเพิ่มสินค้าลงตะกร้าก่อน");
+    }
+
+    if (typeof html2canvas === "undefined") {
+        throw new Error("โปรดรีเฟรชหน้าเว็บแล้วลองใหม่");
+    }
+
+    const captureElement = createOrderCaptureElement();
+    document.body.appendChild(captureElement);
+
+    try {
+        await waitForImages(captureElement);
+
+        const canvas = await html2canvas(captureElement, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+            useCORS: true,
+            allowTaint: true
+        });
+
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 1));
+        if (!blob) throw new Error("ไม่สามารถสร้างรูปภาพได้");
+        return blob;
+    } finally {
+        captureElement.remove();
+    }
 }
 
 async function saveImageBlob(blob, filename, shareTitle, shareText) {
@@ -232,6 +271,79 @@ async function saveImageBlob(blob, filename, shareTitle, shareText) {
     link.click();
     document.body.removeChild(link);
     setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+async function shareImageBlob(blob, filename, shareTitle, shareText, fallbackUrl) {
+    if (typeof File !== "undefined" && navigator.share) {
+        const file = new File([blob], filename, { type: blob.type || "image/png" });
+        if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: shareTitle,
+                    text: shareText
+                });
+                return true;
+            } catch (error) {
+                if (error.name === "AbortError") {
+                    return true;
+                }
+                console.warn("Native image share failed, showing preview fallback:", error);
+            }
+        }
+    }
+
+    const url = URL.createObjectURL(blob);
+    showImageSavePreview(url, filename, true, {
+        title: "แชร์รูปออเดอร์",
+        help: "เครื่องนี้ยังแชร์ไฟล์รูปตรงๆ ไม่ได้ ให้กดค้างที่รูปเพื่อบันทึก แล้วส่งรูปนี้ใน LINE",
+        actionLabel: "ดาวน์โหลดรูป",
+        secondaryLabel: fallbackUrl ? "เปิด LINE พร้อมข้อความ" : "",
+        secondaryUrl: fallbackUrl || ""
+    });
+    return false;
+}
+
+async function shareCartOrderImage() {
+    if (cart.length === 0) {
+        const lineButton = document.getElementById("lineOrderButton");
+        if (lineButton?.dataset.lineUrl) {
+            window.open(lineButton.dataset.lineUrl, "_blank");
+            return;
+        }
+
+        alert("⚠️ กรุณาเพิ่มสินค้าลงตะกร้าก่อนแชร์ออเดอร์");
+        return;
+    }
+
+    let blob;
+    try {
+        if (window.showLoading) showLoading("กำลังสร้างรูปออเดอร์...");
+        blob = await createOrderImageBlob();
+        await shareImageBlob(
+            blob,
+            `BARAYA_ORDER_${Date.now()}.png`,
+            "BARAYA PERFUME ORDER",
+            "รูปออเดอร์ BARAYA PERFUME",
+            document.getElementById("lineOrderButton")?.dataset.lineUrl || ""
+        );
+    } catch (error) {
+        console.error("Share order image failed:", error);
+        alert("❌ ไม่สามารถแชร์รูปออเดอร์ได้: " + error.message);
+    } finally {
+        if (window.hideLoading) hideLoading();
+    }
+}
+
+function setupLineOrderButton() {
+    const lineOrderButton = document.getElementById("lineOrderButton");
+    if (!lineOrderButton || lineOrderButton.dataset.imageShareReady === "true") return;
+
+    lineOrderButton.dataset.imageShareReady = "true";
+    lineOrderButton.addEventListener("click", async event => {
+        event.preventDefault();
+        await shareCartOrderImage();
+    });
 }
 
 function createOrderCaptureElement() {
@@ -300,23 +412,10 @@ async function saveCartOrderImage() {
         return;
     }
 
-    let captureElement;
     try {
         if (window.showLoading) showLoading("กำลังสร้างรูปออเดอร์...");
 
-        captureElement = createOrderCaptureElement();
-        document.body.appendChild(captureElement);
-        await waitForImages(captureElement);
-
-        const canvas = await html2canvas(captureElement, {
-            scale: 2,
-            backgroundColor: "#ffffff",
-            useCORS: true,
-            allowTaint: true
-        });
-
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png", 1));
-        if (!blob) throw new Error("ไม่สามารถสร้างรูปภาพได้");
+        const blob = await createOrderImageBlob();
 
         await saveImageBlob(
             blob,
@@ -340,12 +439,12 @@ async function saveCartOrderImage() {
         console.error("Save order image failed:", error);
         alert("❌ เกิดข้อผิดพลาด: " + error.message);
     } finally {
-        if (captureElement) captureElement.remove();
         if (window.hideLoading) hideLoading();
     }
 }
 
 window.saveCartOrderImage = saveCartOrderImage;
+window.shareCartOrderImage = shareCartOrderImage;
 window.showImageSavePreview = showImageSavePreview;
 
 function toggleCart() {
