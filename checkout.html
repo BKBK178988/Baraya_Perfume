@@ -30,8 +30,8 @@
 
         <label for="customer-phone">เบอร์โทรศัพท์:</label>
         <input type="text" id="customer-phone" placeholder="กรอกเบอร์โทรศัพท์" required>
-        <label for="customer-email">อีเมลลูกค้า:</label>
-<input type="email" id="customer-email" placeholder="กรอกอีเมลของคุณ" required>
+        <label for="customer-email">อีเมลลูกค้า (ถ้ามี):</label>
+        <input type="email" id="customer-email" placeholder="กรอกอีเมลของคุณ">
 
         <h2>📄 QR Code พร้อมเพย์ สำหรับชำระเงิน</h2>
         <img id="qr-code" class="qr-code" alt="QR Code พร้อมเพย์">
@@ -46,9 +46,9 @@
             <img id="slipPreview" class="slip-preview">
         </div>
 
-        <button id="confirmOrderBtn" onclick="confirmOrder()">✅ ยืนยันการสั่งซื้อ</button>
+        <button id="confirmOrderBtn">✅ ยืนยันการสั่งซื้อ</button>
         <button id="manualSubmitBtn" class="fallback-btn">
-            📞 ระบบมีปัญหา? ติดต่อทางร้านโดยตรง
+            📲 ส่งคำสั่งซื้อผ่าน LINE
         </button>
 
         <h3>📦 รายการสินค้าของคุณ</h3>
@@ -61,7 +61,7 @@
     <section class="checkout-steps">
         <h2>🚀 วิธีการสั่งซื้อ</h2>
         <ol>
-            <li>📝 <strong>กรอกข้อมูล</strong>: ชื่อ, ที่อยู่, เบอร์โทรศัพท์</li>
+            <li>📝 <strong>กรอกข้อมูล</strong>: ชื่อ, ที่อยู่, เบอร์โทรศัพท์ และอีเมลถ้ามี</li>
             <li>💳 <strong>QR Code พร้อมเพย์ถูกสร้างอัตโนมัติ</strong> ตามยอดรวมในตะกร้า</li>
             <li>📸 <strong>ลูกค้าสแกน QR Code และโอนเงิน</strong></li>
             <li>📂 <strong>ลูกค้าแนบสลิปการโอนเงิน</strong></li>
@@ -69,7 +69,7 @@
             <ul>
                 <li>✅ ระบบเช็คว่า **กรอกข้อมูลครบ** และ **อัปโหลดสลิปแล้ว**</li>
                 <li>⚠️ ถ้าไม่ครบจะแสดง **แจ้งเตือน**</li>
-                <li>📲 ถ้าครบจะแสดง **"✅ สั่งซื้อสำเร็จ!"** และพาไปที่ **LINE**</li>
+                <li>📲 ถ้าส่งอีเมลไม่ได้ ระบบจะเตรียมข้อมูลออเดอร์และพาไปที่ LINE</li>
                 <li>🛒 ระบบ **ล้างตะกร้าอัตโนมัติ** หลังจากสั่งซื้อสำเร็จ</li>
             </ul>
         </ol>

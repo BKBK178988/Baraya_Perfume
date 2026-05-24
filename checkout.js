@@ -20,6 +20,7 @@ const EMAILJS_SERVICE_ID = "service_sfp9xjq";
 const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
 const LINE_SHARE_URL = "https://line.me/R/share?text=";
 const LINE_APP_SHARE_URL = "line://msg/text/";
+const LINE_CONTACT_URL = "https://line.me/ti/p/OJY81U61Jk";
 
 // Demo IDs for validation comparison
 const DEMO_SERVICE_ID = "service_sfp9xjq";
@@ -101,6 +102,13 @@ function setLoading(isLoading) {
         btn.style.opacity = '1';
         btn.style.cursor = 'pointer';
     }
+}
+
+function getOrderId() {
+    const now = new Date();
+    const datePart = now.toISOString().slice(0, 10).replace(/-/g, "");
+    const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `BRY-${datePart}-${randomPart}`;
 }
 
 /**
@@ -187,6 +195,18 @@ document.addEventListener("DOMContentLoaded", function() {
         confirmBtn.addEventListener('click', confirmOrder);
     } else {
         console.error("❌ ไม่พบปุ่มยืนยันคำสั่งซื้อ (ID: confirmOrderBtn)");
+    }
+
+    const manualBtn = document.getElementById('manualSubmitBtn');
+    if (manualBtn) {
+        manualBtn.onclick = function() {
+            const pendingOrder = localStorage.getItem("pendingOrder");
+            if (pendingOrder) {
+                openLineOrder(JSON.parse(pendingOrder));
+            } else {
+                alert("กรุณากรอกข้อมูลและกดยืนยันคำสั่งซื้อก่อน ระบบจะเตรียมข้อความ LINE ให้ครบถ้วน");
+            }
+        };
     }
     
     // --- 5. แสดงตัวอย่างสลิป (เริ่มต้น) ---
@@ -540,9 +560,10 @@ function buildOrderText(order) {
     return [
         "สวัสดีค่ะ/ครับ ต้องการยืนยันคำสั่งซื้อ BARAYA PERFUME",
         "",
+        `เลขอ้างอิง: ${order.orderId || "-"}`,
         `ชื่อ: ${order.name}`,
         `โทร: ${order.phone}`,
-        `อีเมล: ${order.email}`,
+        `อีเมล: ${order.email || "ไม่ได้ระบุ (ยืนยันผ่าน LINE)"}`,
         `ที่อยู่: ${order.address}`,
         "",
         "รายการสินค้า:",
@@ -550,6 +571,7 @@ function buildOrderText(order) {
         "",
         `ยอดรวม: ${Number(order.totalPrice).toLocaleString()} บาท`,
         "",
+        "หากระบบอีเมลไม่สำเร็จ ขอใช้ข้อมูลนี้ยืนยันออเดอร์ผ่าน LINE",
         "แนบสลิปโอนเงินในแชทนี้แล้ว กรุณาตรวจสอบและยืนยันคำสั่งซื้อค่ะ/ครับ"
     ].join("\n");
 }
@@ -581,25 +603,36 @@ function openLineOrder(order) {
     );
 }
 
-function handleEmailFailure(orderPayload, reason) {
-    console.error("❌ ส่งอีเมลไม่สำเร็จ ใช้ LINE fallback:", reason);
-    setLoading(false);
-
+function showManualLineButton(orderPayload) {
     const manualBtn = document.getElementById('manualSubmitBtn');
-    if (manualBtn) {
-        manualBtn.style.display = 'block';
-        manualBtn.textContent = '📲 ส่งคำสั่งซื้อผ่าน LINE';
-        manualBtn.onclick = () => openLineOrder(orderPayload);
-    }
+    if (!manualBtn) return;
+
+    manualBtn.style.display = 'block';
+    manualBtn.textContent = '📲 ส่งคำสั่งซื้อผ่าน LINE';
+    manualBtn.onclick = () => openLineOrder(orderPayload);
+}
+
+function handleLineFallback(orderPayload, reason, options = {}) {
+    console.error("❌ ใช้ LINE fallback:", reason);
+    setLoading(false);
+    savePendingOrder(orderPayload);
+    showManualLineButton(orderPayload);
+
+    const reasonText = options.reasonText || "ระบบส่งอีเมลอัตโนมัติไม่สำเร็จ แต่ข้อมูลออเดอร์ของคุณถูกเตรียมไว้แล้ว";
 
     alert(
         "✅ บันทึกคำสั่งซื้อแล้ว\n\n" +
-        "⚠️ ระบบส่งอีเมลอัตโนมัติไม่สำเร็จ แต่ข้อมูลออเดอร์ของคุณถูกเตรียมไว้แล้ว\n" +
-        "ระบบจะเปิด LINE ให้ส่งรายการสินค้าและที่อยู่ให้ร้านโดยตรง\n\n" +
+        `⚠️ ${reasonText}\n` +
+        "ระบบจะเปิด LINE ให้ส่งรายการสินค้า ที่อยู่ และเบอร์โทรให้ร้านโดยตรง\n\n" +
         "กรุณาแนบรูปสลิปในแชท LINE อีกครั้ง เพื่อให้ร้านตรวจสอบและยืนยันคำสั่งซื้อ\n\n" +
-        "หาก LINE ไม่เปิด ให้กดปุ่ม “ส่งคำสั่งซื้อผ่าน LINE” อีกครั้ง"
+        "หาก LINE ไม่เปิด ให้กดปุ่ม “ส่งคำสั่งซื้อผ่าน LINE” อีกครั้ง\n" +
+        `หรือเปิด LINE ร้าน: ${LINE_CONTACT_URL}`
     );
     openLineOrder(orderPayload);
+}
+
+function handleEmailFailure(orderPayload, reason) {
+    handleLineFallback(orderPayload, reason);
 }
 
 function finishSuccessfulOrder(message, shouldOpenLine, order) {
@@ -651,20 +684,16 @@ function confirmOrder() {
     }
     setInputFeedback(nameInput, true);
     
-    // ตรวจสอบอีเมล
-    if (!email) {
+    // ตรวจสอบอีเมลเฉพาะเมื่อกรอกมา ถ้าไม่กรอกจะยืนยันผ่าน LINE แทน
+    if (email && !validateEmail(email)) {
         setInputFeedback(emailInput, false);
-        alert("⚠️ กรุณากรอกอีเมล");
+        alert("⚠️ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง\nตัวอย่าง: example@gmail.com\n\nหากไม่ต้องการใช้อีเมล ให้ลบช่องอีเมลว่างไว้ แล้วระบบจะยืนยันผ่าน LINE");
         emailInput.focus();
         return;
     }
-    if (!validateEmail(email)) {
-        setInputFeedback(emailInput, false);
-        alert("⚠️ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง\nตัวอย่าง: example@gmail.com");
-        emailInput.focus();
-        return;
+    if (email) {
+        setInputFeedback(emailInput, true);
     }
-    setInputFeedback(emailInput, true);
     
     // ตรวจสอบที่อยู่
     if (!address) {
@@ -722,6 +751,7 @@ function confirmOrder() {
     }, 0);
 
     const orderPayload = {
+        orderId: getOrderId(),
         name,
         email,
         address,
@@ -746,6 +776,14 @@ function confirmOrder() {
     console.log("📧 กำลังส่งข้อมูลไปยัง EmailJS...");
     console.log("📋 Order Details:", orderDetails);
     console.log("💰 Total Price:", totalPrice);
+
+    // ถ้าไม่กรอกอีเมล ให้ใช้ LINE fallback ทันที ไม่บล็อกการยืนยันคำสั่งซื้อ
+    if (!email) {
+        handleLineFallback(orderPayload, new Error("Customer email is empty"), {
+            reasonText: "ไม่ได้ระบุอีเมล ระบบจึงเตรียมข้อมูลออเดอร์สำหรับยืนยันผ่าน LINE"
+        });
+        return;
+    }
 
     // ถ้า EmailJS ไม่พร้อม ให้ใช้ LINE fallback ทันที ไม่บล็อกการยืนยันคำสั่งซื้อ
     if (!isEmailJSReady()) {

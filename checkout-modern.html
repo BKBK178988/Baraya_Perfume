@@ -18,7 +18,7 @@
 
     <header>
         <h1>🛒 ชำระเงิน</h1>
-        <p>กรอกข้อมูลเพื่อรับสินค้า พร้อมรับอีเมลยืนยันอัตโนมัติ</p>
+        <p>กรอกข้อมูลเพื่อรับสินค้า ระบบจะยืนยันผ่านอีเมลหรือ LINE</p>
     </header>
 
     <section class="checkout-form">
@@ -29,10 +29,10 @@
         <label for="customer-name">👤 ชื่อ - นามสกุล:</label>
         <input type="text" id="customer-name" placeholder="ชื่อ-นามสกุล" required>
 
-        <label for="customer-email">📧 อีเมล (สำคัญ!):</label>
-        <input type="email" id="customer-email" placeholder="your-email@gmail.com" required>
+        <label for="customer-email">📧 อีเมล (ถ้ามี):</label>
+        <input type="email" id="customer-email" placeholder="your-email@gmail.com">
         <small style="color: #666; display: block; margin-top: -10px; margin-bottom: 15px;">
-            *เราจะส่งอีเมลยืนยันการสั่งซื้อไปที่อีเมลนี้
+            *ถ้าส่งอีเมลไม่ได้ ระบบจะเตรียมข้อมูลให้ยืนยันผ่าน LINE
         </small>
 
         <label for="customer-address">🏠 ที่อยู่สำหรับจัดส่ง:</label>
@@ -75,7 +75,7 @@
             ✅ ยืนยันคำสั่งซื้อ
         </button>
         <button id="manualSubmitBtn" style="font-size: 16px; padding: 12px; background: #666; margin-top: 10px; display: none;">
-            📞 ระบบมีปัญหา? ติดต่อทางร้านโดยตรง
+            📲 ส่งคำสั่งซื้อผ่าน LINE
         </button>
 
         <hr style="margin: 40px 0;">
