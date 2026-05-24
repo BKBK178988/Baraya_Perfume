@@ -140,6 +140,7 @@ function updateCart() {
         
         lineOrderButton.href = lineURL;
         lineOrderButton.dataset.lineUrl = lineURL;
+        lineOrderButton.dataset.lineMessage = message;
         
         console.log('🔵 LINE URL updated:', lineURL);
     }
@@ -164,6 +165,34 @@ function isIOSBrowser() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) || (
         navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1
     );
+}
+
+function openLineApp(appUrl, webUrl) {
+    const openedAt = Date.now();
+    window.location.href = appUrl;
+
+    setTimeout(() => {
+        if (Date.now() - openedAt < 1800) {
+            window.location.href = webUrl;
+        }
+    }, 1200);
+}
+
+function openLineTextMessage(message) {
+    const encodedMessage = encodeURIComponent(message);
+    openLineApp(
+        `line://msg/text/${encodedMessage}`,
+        `https://line.me/R/share?text=${encodedMessage}`
+    );
+}
+
+function blobToDataURL(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("ไม่สามารถแปลงรูปภาพได้"));
+        reader.readAsDataURL(blob);
+    });
 }
 
 function showImageSavePreview(imageUrl, filename, revokeUrl, options = {}) {
@@ -257,13 +286,13 @@ async function saveImageBlob(blob, filename, shareTitle, shareText) {
         }
     }
 
-    const url = URL.createObjectURL(blob);
-
     if (shouldUsePreview) {
-        showImageSavePreview(url, filename, true);
+        const dataUrl = await blobToDataURL(blob);
+        showImageSavePreview(dataUrl, filename, false);
         return;
     }
 
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
@@ -274,15 +303,11 @@ async function saveImageBlob(blob, filename, shareTitle, shareText) {
 }
 
 async function shareImageBlob(blob, filename, shareTitle, shareText, fallbackUrl) {
-    if (typeof File !== "undefined" && navigator.share) {
+    if (!isLineInAppBrowser() && typeof File !== "undefined" && navigator.share) {
         const file = new File([blob], filename, { type: blob.type || "image/png" });
         if (!navigator.canShare || navigator.canShare({ files: [file] })) {
             try {
-                await navigator.share({
-                    files: [file],
-                    title: shareTitle,
-                    text: shareText
-                });
+                await navigator.share({ files: [file] });
                 return true;
             } catch (error) {
                 if (error.name === "AbortError") {
@@ -293,13 +318,13 @@ async function shareImageBlob(blob, filename, shareTitle, shareText, fallbackUrl
         }
     }
 
-    const url = URL.createObjectURL(blob);
-    showImageSavePreview(url, filename, true, {
+    const dataUrl = await blobToDataURL(blob);
+    showImageSavePreview(dataUrl, filename, false, {
         title: "แชร์รูปออเดอร์",
-        help: "เครื่องนี้ยังแชร์ไฟล์รูปตรงๆ ไม่ได้ ให้กดค้างที่รูปเพื่อบันทึก แล้วส่งรูปนี้ใน LINE",
+        help: "ระบบสร้างรูปออเดอร์ให้แล้ว ให้กดค้างที่รูปเพื่อบันทึก แล้วส่งรูปนี้ใน LINE",
         actionLabel: "ดาวน์โหลดรูป",
-        secondaryLabel: fallbackUrl ? "เปิด LINE พร้อมข้อความ" : "",
-        secondaryUrl: fallbackUrl || ""
+        secondaryLabel: !isLineInAppBrowser() && fallbackUrl ? "เปิด LINE พร้อมข้อความ" : "",
+        secondaryUrl: !isLineInAppBrowser() && fallbackUrl ? fallbackUrl : ""
     });
     return false;
 }
@@ -307,8 +332,8 @@ async function shareImageBlob(blob, filename, shareTitle, shareText, fallbackUrl
 async function shareCartOrderImage() {
     if (cart.length === 0) {
         const lineButton = document.getElementById("lineOrderButton");
-        if (lineButton?.dataset.lineUrl) {
-            window.open(lineButton.dataset.lineUrl, "_blank");
+        if (lineButton?.dataset.lineMessage) {
+            openLineTextMessage(lineButton.dataset.lineMessage);
             return;
         }
 

@@ -19,6 +19,7 @@
 const EMAILJS_SERVICE_ID = "service_sfp9xjq";
 const EMAILJS_TEMPLATE_ID = "template_tcn8bod";
 const LINE_SHARE_URL = "https://line.me/R/share?text=";
+const LINE_APP_SHARE_URL = "line://msg/text/";
 
 // Demo IDs for validation comparison
 const DEMO_SERVICE_ID = "service_sfp9xjq";
@@ -560,9 +561,24 @@ function savePendingOrder(order) {
     }));
 }
 
+function openLineApp(appUrl, webUrl) {
+    const openedAt = Date.now();
+    window.location.href = appUrl;
+
+    setTimeout(() => {
+        if (Date.now() - openedAt < 1800) {
+            window.location.href = webUrl;
+        }
+    }, 1200);
+}
+
 function openLineOrder(order) {
     const message = buildOrderText(order);
-    window.open(`${LINE_SHARE_URL}${encodeURIComponent(message)}`, "_blank");
+    const encodedMessage = encodeURIComponent(message);
+    openLineApp(
+        `${LINE_APP_SHARE_URL}${encodedMessage}`,
+        `${LINE_SHARE_URL}${encodedMessage}`
+    );
 }
 
 function handleEmailFailure(orderPayload, reason) {
